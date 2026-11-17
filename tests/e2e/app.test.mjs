@@ -84,8 +84,11 @@ test("pauza z pilota wstrzymuje program, Wznów uruchamia taśmę", async () => 
   const sentBefore = (await sent(page)).length;
   await page.click("#btnResume");
   await until(page, n => window.__ble.sent.length > n && window.__ble.sent.slice(n).some(c => c[0] === 2), sentBefore);
+  // przed kliknięciem mogło jeszcze dojść nachylenie z poprzedniego odcinka – liczy się kolejność start → prędkość
   const resumed = hex((await sent(page)).slice(sentBefore));
-  assert.equal(resumed[0], "07", "wznowienie wysyła start");
+  const startAt = resumed.indexOf("07");
+  assert.ok(startAt >= 0, "wznowienie wysyła start");
+  assert.ok(startAt < resumed.findIndex(c => c.startsWith("02 ")), "start przed ustawieniem prędkości");
   await page.click("#btnStop");
   assert.equal(hex(await sent(page)).pop(), "08 01");
   assert.deepEqual(errors, []);
