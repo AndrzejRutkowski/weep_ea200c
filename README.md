@@ -18,10 +18,11 @@ Bieżnia ma moduł Bluetooth FitShow FS-BT-D2, który obsługuje standard **FTMS
 4. [Trening](#trening)
 5. [Tworzenie programów](#tworzenie-programów)
 6. [Gdzie zapisują się programy](#gdzie-zapisują-się-programy)
-7. [Ustawienia](#ustawienia)
-8. [Rozwiązywanie problemów](#rozwiązywanie-problemów)
-9. [Bezpieczeństwo](#bezpieczeństwo)
-10. [Informacje techniczne](#informacje-techniczne)
+7. [Historia treningów](#historia-treningów)
+8. [Ustawienia](#ustawienia)
+9. [Rozwiązywanie problemów](#rozwiązywanie-problemów)
+10. [Bezpieczeństwo](#bezpieczeństwo)
+11. [Informacje techniczne](#informacje-techniczne)
 
 ---
 
@@ -151,6 +152,21 @@ Programy można też zapisać wewnątrz samego pliku strony, np. gdy używasz je
 - **Pobierz kopię strony z programami** (każda przeglądarka) pobiera nowy plik `bieznia.html` z Twoimi programami w środku.
 
 Przy otwarciu strona porównuje daty zapisu w pliku i w przeglądarce i używa nowszej wersji.
+
+## Historia treningów
+
+Każdy trening uruchomiony z programu, który trwał co najmniej minutę, zapisuje się w zakładce **Historia**. Wpis zawiera:
+- datę i godzinę, nazwę programu,
+- czas aktywny (bez pauz), dystans, średnią i maksymalną prędkość,
+- kalorie (jeśli bieżnia je podaje) i przybliżone przewyższenie, liczone z poziomu nachylenia,
+- status:
+  - **ukończony**: program do końca,
+  - **zatrzymany**: przyciskiem Stop, wtedy widać też liczbę zrobionych odcinków,
+  - **przerwany**: np. zamknięta strona albo rozładowany telefon. Postęp zapisuje się co 10 sekund, a trening trafia do historii przy następnym otwarciu.
+
+Na górze zakładki jest podsumowanie bieżącego tygodnia, miesiąca i całości oraz wykres dystansu z ostatnich 8 tygodni.
+
+Wpis usuniesz przyciskiem **✕** (kliknij dwa razy). Historia jest w pamięci przeglądarki, więc warto czasem kliknąć **Pobierz kopię historii (.json)**. Wczytanie kopii na innym urządzeniu dodaje tylko brakujące treningi.
 
 ## Ustawienia
 

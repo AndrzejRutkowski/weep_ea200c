@@ -37,7 +37,21 @@
   button.sm{padding:5px 9px;font-size:13px;border-radius:8px}
   .tabs{display:flex;gap:6px;margin:4px 0 12px}
   .tabs button{flex:1}
-  @media (max-width:480px){ .tabs button{padding:9px 6px;font-size:14px} }
+  @media (max-width:480px){ .tabs{gap:4px} .tabs button{padding:9px 2px;font-size:13px} }
+  .hstats{grid-template-columns:repeat(3,1fr)}
+  .hstats .v{font-size:20px}
+  .hitem{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:10px 0;border-bottom:1px solid var(--line)}
+  .hitem .t{font-weight:600}
+  .hitem .d{color:var(--muted);font-size:13px}
+  .hitem .m{grid-column:1 / 3;font-size:14px;font-variant-numeric:tabular-nums}
+  .badge{display:inline-block;font-size:11px;padding:1px 7px;border-radius:99px;margin-left:6px;vertical-align:1px;font-weight:600}
+  .badge.ok{background:#1d2e14;color:#b7ef8a} .badge.stop{background:#2e2614;color:#ffd38a} .badge.int{background:#2e1616;color:#ff9f9f}
+  .weeks{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;align-items:end;height:150px}
+  .weeks .col{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;min-width:0}
+  .weeks .bar{width:100%;max-width:48px;border-radius:5px 5px 2px 2px;background:#5f8f3a;min-height:2px}
+  .weeks .col.cur .bar{background:var(--accent)}
+  .weeks .val{font-size:12px;margin-bottom:3px;font-variant-numeric:tabular-nums}
+  .weeks .lab{font-size:11px;color:var(--muted);margin-top:4px;white-space:nowrap}
   .help h3{font-size:16px;margin:0 0 6px}
   .help p,.help li{color:#cfd3db}
   .help ul,.help ol{margin:6px 0 10px;padding-left:20px}
@@ -140,6 +154,7 @@
   <div class="tabs">
     <button data-tab="train" class="active">Trening</button>
     <button data-tab="programs">Programy</button>
+    <button data-tab="history">Historia</button>
     <button data-tab="settings">Ustawienia</button>
     <button data-tab="help">Pomoc</button>
   </div>
@@ -272,6 +287,28 @@
     </div>
   </section>
 
+  <!-- ============ HISTORIA ============ -->
+  <section id="tab-history" class="hidden">
+    <div class="panel">
+      <h2>Podsumowanie</h2>
+      <div class="grid hstats" id="hStats"></div>
+    </div>
+    <div class="panel">
+      <h2>Dystans w ostatnich 8 tygodniach</h2>
+      <div class="weeks" id="hWeeks"></div>
+    </div>
+    <div class="panel">
+      <h2>Treningi</h2>
+      <div id="hList"></div>
+      <div class="row" style="margin-top:12px">
+        <button id="btnHistExport" class="sm">Pobierz kopię historii (.json)</button>
+        <label class="sm" style="display:inline-flex"><input id="histImport" type="file" accept=".json,application/json" style="max-width:220px"></label>
+        <span class="hint" id="hMsg"></span>
+      </div>
+      <p class="hint">Zapisują się treningi z programu trwające co najmniej minutę. Historia jest w pamięci tej przeglądarki, więc warto czasem pobrać jej kopię.</p>
+    </div>
+  </section>
+
   <!-- ============ USTAWIENIA ============ -->
   <section id="tab-settings" class="hidden">
     <div class="panel">
@@ -366,7 +403,18 @@
     </details>
 
     <details>
-      <summary>5. Ustawienia</summary>
+      <summary>5. Historia treningów</summary>
+      <ul>
+        <li>Każdy trening z programu trwający co najmniej minutę zapisuje się w zakładce <b>Historia</b>: data, program, czas, dystans, średnia i maks. prędkość, kalorie i przewyższenie.</li>
+        <li>Status: <b>ukończony</b> (program do końca), <b>zatrzymany</b> (przyciskiem Stop) albo <b>przerwany</b> (np. zamknięta strona; trening zostaje odzyskany przy następnym otwarciu).</li>
+        <li>Na górze widać podsumowanie tygodnia, miesiąca i całości oraz wykres dystansu z 8 tygodni.</li>
+        <li>Wpis usuniesz przyciskiem <kbd>✕</kbd> (kliknij dwa razy). Kopię zrobisz przyciskiem <kbd>Pobierz kopię historii</kbd> i wczytasz na innym urządzeniu. Import dodaje tylko brakujące treningi.</li>
+        <li>Przewyższenie jest liczone z poziomu nachylenia, więc jest przybliżone, tak jak przeliczenie na %.</li>
+      </ul>
+    </details>
+
+    <details>
+      <summary>6. Ustawienia</summary>
       <ul>
         <li><b>Opóźnienie po starcie taśmy</b> (4 s): ile strona czeka po komendzie start, zanim ustawi prędkość.</li>
         <li><b>Po zakończeniu programu:</b> zatrzymaj taśmę albo zostaw wolny marsz.</li>
@@ -376,7 +424,7 @@
     </details>
 
     <details>
-      <summary>6. Gdy coś nie działa</summary>
+      <summary>7. Gdy coś nie działa</summary>
       <table>
         <tr><td>Nie widać bieżni</td><td>Zamknij FitShow. Na Macu sprawdź, czy przeglądarka ma dostęp do Bluetooth (Ustawienia systemowe → Prywatność i ochrona → Bluetooth).</td></tr>
         <tr><td>Przycisk Połącz nieaktywny</td><td>Ta przeglądarka nie obsługuje Bluetooth. Użyj Chrome, Edge albo Bluefy.</td></tr>
@@ -786,7 +834,8 @@ async function startProgram() {
   $("runWarn").classList.toggle("hidden", !p.segments.some(s => s.speed > st.speedRange.max));
   $("runWarn").textContent = `Uwaga: bieżnia przyjmuje teraz maks. ${fmtNum(st.speedRange.max)} km/h (tryb chodzenia?). Szybsze odcinki zostaną ograniczone. Podnieś poręcz (tryb biegania), żeby odblokować 12 km/h.`;
   run = { program: JSON.parse(JSON.stringify(p)), segIdx: 0, segT: 0, t: 0, dist: 0, phase: "starting",
-          wait: settings.startDelay, last: performance.now(), lastBeep: null, startKcal: st.data.kcal, pausedBy: null };
+          wait: settings.startDelay, last: performance.now(), lastBeep: null, startKcal: st.data.kcal, pausedBy: null,
+          id: uid(), startedAt: Date.now(), elev: 0, maxSpeed: 0, lastPersist: performance.now() };
   $("summary").classList.add("hidden");
   takeWake();
   renderRun();
@@ -817,10 +866,13 @@ async function stopAll() {
 function finish(stoppedByUser) {
   if (!run) return;
   run.phase = "done"; releaseWake();
-  const kcal = (st.data.kcal != null && run.startKcal != null && st.data.kcal >= run.startKcal) ? st.data.kcal - run.startKcal : st.data.kcal;
+  const kcal = runKcal();
+  const saved = saveRunToHistory(stoppedByUser ? "zatrzymany" : "ukończony");
   const box = $("summary");
   box.innerHTML = `<b>${stoppedByUser ? "Zatrzymano" : "Program zakończony"} – ${escapeHtml(run.program.name)}</b><br>
-    Czas: <b>${fmtTime(run.t)}</b> · Dystans: <b>${fmtNum(run.dist, 2)} km</b>${kcal != null ? ` · Kalorie: <b>${kcal} kcal</b>` : ""}`;
+    Czas: <b>${fmtTime(run.t)}</b> · Dystans: <b>${fmtNum(run.dist, 2)} km</b>${kcal != null ? ` · Kalorie: <b>${kcal} kcal</b>` : ""}` +
+    (run.elev >= 1 ? ` · Przewyższenie: <b>${Math.round(run.elev)} m</b>` : "") +
+    `<br><span class="hint">${saved ? "Zapisano w historii." : "Za krótki trening (poniżej minuty) – nie zapisano w historii."}</span>`;
   box.classList.remove("hidden");
   if (!stoppedByUser) {
     if (settings.beep) { beep(988, 150); setTimeout(() => beep(1319, 350), 180); }
@@ -846,6 +898,91 @@ function addMinute() {
   run.program.segments[run.segIdx].dur += 60; renderRun();
 }
 
+/* =====================================================================
+   Historia treningów
+   ===================================================================== */
+const K_HIST = "bieznia.history.v1", K_CUR = "bieznia.currentrun.v1";
+let workouts = store.get(K_HIST, []);
+if (!Array.isArray(workouts)) workouts = [];
+const saveHistory = () => store.set(K_HIST, workouts);
+
+function inclGrade(level) { // poziom → spadek (ułamek), np. 0,07 dla 7%
+  if (level == null || isNaN(level) || level <= 0) return 0;
+  return Math.tan(inclDeg(level) * Math.PI / 180);
+}
+function runKcal() {
+  if (st.data.kcal == null) return null;
+  return (run.startKcal != null && st.data.kcal >= run.startKcal) ? st.data.kcal - run.startKcal : st.data.kcal;
+}
+function historyEntry(status) {
+  return { id: run.id, start: run.startedAt, end: Date.now(), program: run.program.name,
+           duration: Math.round(run.t), dist: Math.round(run.dist * 1000) / 1000, kcal: runKcal(),
+           elev: Math.round(run.elev), maxSpeed: Math.round(run.maxSpeed * 10) / 10,
+           segDone: Math.min(run.segIdx, run.program.segments.length), segTotal: run.program.segments.length, status };
+}
+function addToHistory(e) {
+  if (!e || e.duration < 60) return false;
+  workouts = workouts.filter(h => h.id !== e.id);
+  workouts.push(e); workouts.sort((a, b) => b.start - a.start);
+  saveHistory(); renderHistory(); return true;
+}
+function saveRunToHistory(status) {
+  const ok = addToHistory(historyEntry(status));
+  try { localStorage.removeItem(K_CUR); } catch (e) {}
+  return ok;
+}
+// trening przerwany zamknięciem strony – odzyskaj przy następnym otwarciu
+(function recoverRun() {
+  const cur = store.get(K_CUR, null);
+  if (cur) { addToHistory(cur); try { localStorage.removeItem(K_CUR); } catch (e) {} }
+})();
+
+function weekStart(ts) { const d = new Date(ts); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return d.getTime(); }
+function sumUp(list) { return list.reduce((a, h) => ({ n: a.n + 1, t: a.t + h.duration, d: a.d + h.dist, k: a.k + (h.kcal || 0), e: a.e + (h.elev || 0) }), { n: 0, t: 0, d: 0, k: 0, e: 0 }); }
+function fmtDur(sec) { const h = Math.floor(sec / 3600), m = Math.round((sec % 3600) / 60); return h ? `${h} h ${m} min` : `${m} min`; }
+
+function renderHistory() {
+  if (!$("hList")) return;
+  const now = Date.now(), wk = weekStart(now);
+  const mStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).getTime();
+  const tile = (label, x) => `<div class="stat"><div class="l">${label}</div><div class="v">${fmtNum(x.d, 1)}<span class="u">km</span></div>
+      <div class="l">${x.n} ${x.n === 1 ? "trening" : (x.n % 10 >= 2 && x.n % 10 <= 4 && (x.n % 100 < 12 || x.n % 100 > 14)) ? "treningi" : "treningów"} · ${fmtDur(x.t)}${x.k ? ` · ${x.k} kcal` : ""}</div></div>`;
+  $("hStats").innerHTML = tile("Ten tydzień", sumUp(workouts.filter(h => h.start >= wk))) +
+                          tile("Ten miesiąc", sumUp(workouts.filter(h => h.start >= mStart))) +
+                          tile("Łącznie", sumUp(workouts));
+
+  // 8 tygodni
+  const weeks = [];
+  for (let i = 7; i >= 0; i--) { const s0 = wk - i * 7 * 864e5; weeks.push({ s: s0, d: sumUp(workouts.filter(h => weekStart(h.start) === s0)).d }); }
+  const maxD = Math.max(1, ...weeks.map(w => w.d));
+  $("hWeeks").innerHTML = weeks.map((w, i) => {
+    const lab = new Date(w.s).toLocaleDateString("pl-PL", { day: "numeric", month: "numeric" });
+    return `<div class="col${i === 7 ? " cur" : ""}" title="Tydzień od ${lab}"><div class="val">${w.d ? fmtNum(w.d, 1) : ""}</div>` +
+      `<div class="bar" style="height:${(w.d / maxD * 100).toFixed(1)}px"></div><div class="lab">${lab}</div></div>`;
+  }).join("");
+
+  if (!workouts.length) { $("hList").innerHTML = `<p class="hint">Brak treningów. Pojawią się tu po pierwszym programie.</p>`; return; }
+  const badge = { "ukończony": "ok", "zatrzymany": "stop", "przerwany": "int" };
+  $("hList").innerHTML = workouts.map(h => {
+    const d = new Date(h.start);
+    const when = d.toLocaleDateString("pl-PL", { weekday: "short", day: "numeric", month: "short", year: d.getFullYear() !== new Date().getFullYear() ? "numeric" : undefined }) +
+                 ", " + d.toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" });
+    const avg = h.duration ? h.dist / (h.duration / 3600) : 0;
+    return `<div class="hitem" data-id="${h.id}">
+      <div><span class="t">${escapeHtml(h.program)}</span><span class="badge ${badge[h.status] || "stop"}">${h.status}</span><div class="d">${when}</div></div>
+      <div><button class="sm ghost" data-del="${h.id}" title="Usuń z historii">✕</button></div>
+      <div class="m">${fmtTime(h.duration)} · ${fmtNum(h.dist, 2)} km · śr. ${fmtNum(avg)} km/h${h.maxSpeed ? ` · maks. ${fmtNum(h.maxSpeed)} km/h` : ""}${h.kcal != null ? ` · ${h.kcal} kcal` : ""}${h.elev ? ` · ↗ ${h.elev} m` : ""}${h.status !== "ukończony" ? ` · odcinki ${h.segDone}/${h.segTotal}` : ""}</div>
+    </div>`;
+  }).join("");
+}
+let histDelArmed = null;
+document.addEventListener("click", e => {
+  const b = e.target.closest("button[data-del]"); if (!b) return;
+  const id = b.dataset.del;
+  if (histDelArmed !== id) { histDelArmed = id; b.textContent = "Usuń?"; setTimeout(() => { if (histDelArmed === id) { histDelArmed = null; b.textContent = "✕"; } }, 3000); return; }
+  histDelArmed = null; workouts = workouts.filter(h => h.id !== id); saveHistory(); renderHistory();
+});
+
 function tick() {
   const now = performance.now();
   if (run && run.phase !== "done") {
@@ -855,7 +992,11 @@ function tick() {
       if (run.wait <= 0) { const first = run.phase === "starting"; run.phase = "running"; applySegment(first); }
     } else if (run.phase === "running") {
       run.t += dt; run.segT += dt;
-      run.dist += (st.data.speed || 0) * dt / 3600;
+      const sp = st.data.speed || 0, dKm = sp * dt / 3600;
+      run.dist += dKm;
+      run.elev += dKm * 1000 * inclGrade(st.data.incline);
+      if (sp > run.maxSpeed) run.maxSpeed = sp;
+      if (now - run.lastPersist > 10000) { run.lastPersist = now; store.set(K_CUR, historyEntry("przerwany")); }
       const segs = run.program.segments;
       const rem = segs[run.segIdx].dur - run.segT;
       const sec = Math.ceil(rem);
@@ -1204,9 +1345,10 @@ function bindSettings() {
    ===================================================================== */
 document.querySelectorAll(".tabs button").forEach(b => b.onclick = () => {
   document.querySelectorAll(".tabs button").forEach(x => x.classList.toggle("active", x === b));
-  ["train", "programs", "settings", "help"].forEach(t => $("tab-" + t).classList.toggle("hidden", t !== b.dataset.tab));
+  ["train", "programs", "history", "settings", "help"].forEach(t => $("tab-" + t).classList.toggle("hidden", t !== b.dataset.tab));
   if (b.dataset.tab === "programs") renderEditor();
   if (b.dataset.tab === "settings") renderDevInfo();
+  if (b.dataset.tab === "history") renderHistory();
 });
 $("btnConnect").onclick = () => { ensureAudio(); st.device && !st.device.gatt.connected ? setup().catch(e => { log("✖ " + e.message); setConn("err", "Błąd połączenia"); }) : connect(); };
 $("btnDisconnect").onclick = disconnect;
@@ -1233,6 +1375,37 @@ $("btnCopyLog").onclick = async () => { try { await navigator.clipboard.writeTex
    ===================================================================== */
 if (!navigator.bluetooth) { $("noBt").classList.remove("hidden"); $("btnConnect").disabled = true; }
 bindSettings();
+$("btnHistExport").onclick = () => {
+  try {
+    const blob = new Blob([JSON.stringify({ app: "bieznia-ftms", type: "history", version: 1, history: workouts }, null, 2)], { type: "application/json" });
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
+    a.download = `historia-bieznia-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    $("hMsg").textContent = "Pobrano kopię historii.";
+  } catch (e) { $("hMsg").textContent = "Pobieranie nie powiodło się: " + e.message; }
+};
+$("histImport").onchange = e => {
+  const f = e.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try {
+      const obj = JSON.parse(r.result), list = Array.isArray(obj) ? obj : (obj.history || obj.workouts);
+      if (!Array.isArray(list)) throw new Error("to nie jest plik historii");
+      const ids = new Set(workouts.map(h => h.id)); let added = 0;
+      for (const h of list) {
+        if (!h || !h.id || ids.has(h.id) || !(h.start > 0) || !(h.duration >= 0)) continue;
+        workouts.push({ id: String(h.id), start: +h.start, end: +h.end || +h.start, program: String(h.program || "Trening"),
+          duration: +h.duration, dist: +h.dist || 0, kcal: h.kcal == null ? null : +h.kcal, elev: +h.elev || 0,
+          maxSpeed: +h.maxSpeed || 0, segDone: +h.segDone || 0, segTotal: +h.segTotal || 0, status: String(h.status || "ukończony") });
+        ids.add(h.id); added++;
+      }
+      workouts.sort((a, b) => b.start - a.start); saveHistory(); renderHistory();
+      $("hMsg").textContent = `Dodano treningów: ${added}.`;
+    } catch (err) { $("hMsg").textContent = "Błąd importu: " + err.message; }
+  };
+  r.readAsText(f); e.target.value = "";
+};
+
 const K_SEEN = "bieznia.helpseen.v1";
 function openTab(name) { document.querySelector(`.tabs button[data-tab="${name}"]`).click(); }
 function hideFirstRun() { $("firstRun").classList.add("hidden"); store.set(K_SEEN, 1); }
@@ -1242,6 +1415,7 @@ $("btnFirstClose").onclick = hideFirstRun;
 document.querySelector('.tabs button[data-tab="help"]').addEventListener("click", hideFirstRun);
 renderAll();
 renderFileState();
+renderHistory();
 if (loadedFromFile) log("Wczytano programy zapisane w pliku HTML (były nowsze niż w przeglądarce).");
 log("Gotowe. " + (navigator.bluetooth ? "Web Bluetooth dostępny." : "Brak Web Bluetooth w tej przeglądarce."));
 /* Tryb aplikacji (PWA): praca offline – tylko przy https lub localhost */
