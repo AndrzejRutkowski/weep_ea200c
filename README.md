@@ -1,4 +1,4 @@
-# Bieżnia – programy (WEEP Easy EA200C / FTMS)
+# Bieżnia Weep EA200C
 
 Strona do tworzenia własnych programów treningowych i sterowania bieżnią przez Bluetooth
 (standard FTMS – moduł FitShow FS-BT-D2). Działa w przeglądarce, bez serwera i bez konta.
