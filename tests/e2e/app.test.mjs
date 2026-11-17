@@ -5,8 +5,12 @@ import assert from "node:assert/strict";
 import { setup, sent, until, TEST_PROGRAM } from "./helpers.mjs";
 
 let env;
-before(async () => { env = await setup(); });
-after(async () => { await env.close(); });
+before(async () => {
+  env = await setup();
+});
+after(async () => {
+  await env.close();
+});
 
 const hex = cmds => cmds.map(c => c.map(b => b.toString(16).padStart(2, "0")).join(" "));
 
@@ -50,8 +54,10 @@ test("program: start, zmiany odcinków, stop na końcu, podsumowanie", async () 
   const { page, ctx, errors } = await env.openApp({ programs: [TEST_PROGRAM] });
   await connect(page);
   await page.click("#btnStart");
-  await until(page, () => /1\/3/.test(document.getElementById("segName").textContent) &&
-    window.__ble.sent.some(c => c[0] === 2));
+  await until(
+    page,
+    () => /1\/3/.test(document.getElementById("segName").textContent) && window.__ble.sent.some(c => c[0] === 2)
+  );
   await until(page, () => !document.getElementById("summary").classList.contains("hidden"));
   const cmds = hex(await sent(page));
   assert.equal(cmds[1], "07", "start taśmy");
@@ -75,11 +81,11 @@ test("pauza z pilota wstrzymuje program, Wznów uruchamia taśmę", async () => 
   await page.evaluate(() => window.__ble.emitStatus([2, 2]));
   await until(page, () => /Pauza/.test(document.getElementById("phaseMsg").textContent));
   assert.ok(await page.isVisible("#btnResume"));
-  const before = (await sent(page)).length;
+  const sentBefore = (await sent(page)).length;
   await page.click("#btnResume");
-  await until(page, n => window.__ble.sent.length > n && window.__ble.sent.slice(n).some(c => c[0] === 2), before);
-  const after = hex((await sent(page)).slice(before));
-  assert.equal(after[0], "07", "wznowienie wysyła start");
+  await until(page, n => window.__ble.sent.length > n && window.__ble.sent.slice(n).some(c => c[0] === 2), sentBefore);
+  const resumed = hex((await sent(page)).slice(sentBefore));
+  assert.equal(resumed[0], "07", "wznowienie wysyła start");
   await page.click("#btnStop");
   assert.equal(hex(await sent(page)).pop(), "08 01");
   assert.deepEqual(errors, []);
@@ -91,9 +97,9 @@ test("tryb chodzenia: ostrzeżenie i przycięcie prędkości do 6 km/h", async (
   await connect(page);
   await page.click("#btnStart");
   assert.ok(await page.isVisible("#runWarn"), "ostrzeżenie o 6 km/h");
-  await until(page, () => window.__ble.sent.some(c => c[0] === 2 && (c[1] | c[2] << 8) === 600));
+  await until(page, () => window.__ble.sent.some(c => c[0] === 2 && (c[1] | (c[2] << 8)) === 600));
   await page.click("#btnStop");
-  assert.ok(!(await sent(page)).some(c => c[0] === 2 && (c[1] | c[2] << 8) > 600), "nic powyżej 6 km/h");
+  assert.ok(!(await sent(page)).some(c => c[0] === 2 && (c[1] | (c[2] << 8)) > 600), "nic powyżej 6 km/h");
   assert.deepEqual(errors, []);
   await ctx.close();
 });
@@ -101,9 +107,24 @@ test("tryb chodzenia: ostrzeżenie i przycięcie prędkości do 6 km/h", async (
 test("historia: trening ≥ 1 min trafia do historii, przerwany jest odzyskiwany", async () => {
   const prog = { id: "h1", name: "Minuta", segments: [{ id: "s", name: "S", dur: 62, speed: 6, incline: 0 }] };
   const now = Date.now();
-  const interrupted = { id: "x1", start: now - 3 * 864e5, end: now - 3 * 864e5 + 15e5, program: "Przerwany", duration: 1500,
-    dist: 3.1, kcal: 200, elev: 10, maxSpeed: 9, segDone: 3, segTotal: 8, status: "przerwany" };
-  const { page, ctx, errors } = await env.openApp({ programs: [prog], storage: { "bieznia.currentrun.v1": interrupted } });
+  const interrupted = {
+    id: "x1",
+    start: now - 3 * 864e5,
+    end: now - 3 * 864e5 + 15e5,
+    program: "Przerwany",
+    duration: 1500,
+    dist: 3.1,
+    kcal: 200,
+    elev: 10,
+    maxSpeed: 9,
+    segDone: 3,
+    segTotal: 8,
+    status: "przerwany"
+  };
+  const { page, ctx, errors } = await env.openApp({
+    programs: [prog],
+    storage: { "bieznia.currentrun.v1": interrupted }
+  });
   await page.click(".tabs button[data-tab=history]");
   assert.match(await page.innerText("#hList"), /Przerwany/, "odzyskany trening");
   await page.click(".tabs button[data-tab=train]");
@@ -125,9 +146,12 @@ test("edytor: zmiany odcinków, generator interwałów, zapis po przeładowaniu"
   await page.click(".tabs button[data-tab=programs]");
   await page.fill("#edName", "Mój program");
   const row = page.locator(".segrow").nth(1); // pierwsza to nagłówek
-  await row.locator("input[data-f=dur]").fill("2:30"); await row.locator("input[data-f=dur]").press("Tab");
-  await row.locator("input[data-f=speed]").fill("7.5"); await row.locator("input[data-f=speed]").press("Tab");
-  await page.fill("#gN", "2"); await page.click("#btnGen");
+  await row.locator("input[data-f=dur]").fill("2:30");
+  await row.locator("input[data-f=dur]").press("Tab");
+  await row.locator("input[data-f=speed]").fill("7.5");
+  await row.locator("input[data-f=speed]").press("Tab");
+  await page.fill("#gN", "2");
+  await page.click("#btnGen");
   assert.equal(await page.locator("#segList .segrow").count(), 3 + 4);
   await page.reload();
   await page.click(".tabs button[data-tab=programs]");
@@ -150,7 +174,8 @@ test("kolejność programów: strzałki i przeciąganie", async () => {
   assert.deepEqual(await names(), [start[1], start[0], start[2]]);
   const h = await page.locator(".pitem .handle").nth(2).boundingBox();
   const top = await page.locator(".pitem").first().boundingBox();
-  await page.mouse.move(h.x + 10, h.y + 10); await page.mouse.down();
+  await page.mouse.move(h.x + 10, h.y + 10);
+  await page.mouse.down();
   for (let y = h.y + 10; y > top.y + 4; y -= 8) await page.mouse.move(h.x + 10, y);
   await page.mouse.up();
   assert.deepEqual(await names(), [start[2], start[1], start[0]]);
@@ -206,7 +231,9 @@ test("aktualizacja: pasek nowej wersji i przeładowanie po kliknięciu", async (
     await until(page, () => !document.getElementById("updBar").classList.contains("hidden"));
     await Promise.all([page.waitForEvent("load"), page.click("#btnUpdate")]);
     await until(page, n => document.getElementById("appVersion").textContent === "v" + n, v + 1);
-  } finally { env.server.overrides.clear(); }
+  } finally {
+    env.server.overrides.clear();
+  }
   assert.deepEqual(errors, []);
   await ctx.close();
 });

@@ -7,9 +7,14 @@ import { fileURLToPath } from "node:url";
 
 const ROOT = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const TYPES = {
-  ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".mjs": "text/javascript; charset=utf-8",
-  ".css": "text/css; charset=utf-8", ".json": "application/json", ".webmanifest": "application/manifest+json",
-  ".svg": "image/svg+xml", ".png": "image/png"
+  ".html": "text/html; charset=utf-8",
+  ".js": "text/javascript; charset=utf-8",
+  ".mjs": "text/javascript; charset=utf-8",
+  ".css": "text/css; charset=utf-8",
+  ".json": "application/json",
+  ".webmanifest": "application/manifest+json",
+  ".svg": "image/svg+xml",
+  ".png": "image/png"
 };
 
 /**
@@ -23,11 +28,17 @@ export async function startServer(port = 0) {
     let path = decodeURIComponent(new URL(req.url, "http://x").pathname);
     if (path.endsWith("/")) path += "index.html";
     const file = normalize(join(ROOT, path));
-    if (!file.startsWith(ROOT) || file.includes("node_modules") || file.includes(`${ROOT}/.git`)) { res.writeHead(403).end(); return; }
+    if (!file.startsWith(ROOT) || file.includes("node_modules") || file.includes(`${ROOT}/.git`)) {
+      res.writeHead(403).end();
+      return;
+    }
     try {
       const rel = path.replace(/^\//, "");
       const body = overrides.has(rel) ? overrides.get(rel) : await readFile(file);
-      res.writeHead(200, { "Content-Type": TYPES[extname(file)] || "application/octet-stream", "Cache-Control": "no-cache" });
+      res.writeHead(200, {
+        "Content-Type": TYPES[extname(file)] || "application/octet-stream",
+        "Cache-Control": "no-cache"
+      });
       res.end(body);
     } catch {
       res.writeHead(404).end("Not found");
@@ -35,7 +46,15 @@ export async function startServer(port = 0) {
   });
   await new Promise(r => server.listen(port, "127.0.0.1", r));
   const url = `http://localhost:${server.address().port}/`;
-  return { url, overrides, close: () => new Promise(r => { server.closeAllConnections(); server.close(() => r()); }) };
+  return {
+    url,
+    overrides,
+    close: () =>
+      new Promise(r => {
+        server.closeAllConnections();
+        server.close(() => r());
+      })
+  };
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
