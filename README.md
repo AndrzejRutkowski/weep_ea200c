@@ -23,6 +23,7 @@ Bieżnia ma moduł Bluetooth FitShow FS-BT-D2, który obsługuje standard **FTMS
 9. [Rozwiązywanie problemów](#rozwiązywanie-problemów)
 10. [Bezpieczeństwo](#bezpieczeństwo)
 11. [Informacje techniczne](#informacje-techniczne)
+12. [Dla programistów](#dla-programistów)
 
 ---
 
@@ -56,7 +57,7 @@ W trakcie treningu pasek się nie pokazuje, żeby przeładowanie nie przerwało 
 
 Numer zainstalowanej wersji i przycisk **Sprawdź aktualizacje** są w zakładce **Ustawienia → Aplikacja**.
 
-> Dla rozwijających aplikację: przy każdej zmianie plików podbij `VERSION` w `sw.js`. Tylko wtedy zainstalowane aplikacje zobaczą nową wersję.
+> Dla rozwijających aplikację: przed commitem uruchom `npm run version`. Skrypt sam podbija wersję w `sw.js`, gdy zmieniły się pliki aplikacji (CI pilnuje, żeby o tym nie zapomnieć).
 
 ## Pierwsze połączenie z bieżnią
 
@@ -158,14 +159,6 @@ W zakładce **Programy → Eksport / import**:
 
 Import **dodaje** programy do istniejących, niczego nie usuwa. W ten sposób przeniesiesz programy np. z Maca na iPhone'a.
 
-### Zapis w pliku HTML (opcjonalnie)
-
-Programy można też zapisać wewnątrz samego pliku strony, np. gdy używasz jej jako pliku na dysku:
-- **Zapisz do pliku…** (tylko Chrome i Edge na komputerze) nadpisuje wskazany plik HTML. Za pierwszym razem wybierasz plik, później wystarczy jedno kliknięcie.
-- **Pobierz kopię strony z programami** (każda przeglądarka) pobiera nowy plik `bieznia.html` z Twoimi programami w środku.
-
-Przy otwarciu strona porównuje daty zapisu w pliku i w przeglądarce i używa nowszej wersji.
-
 ## Historia treningów
 
 Każdy trening uruchomiony z programu, który trwał co najmniej minutę, zapisuje się w zakładce **Historia**. Wpis zawiera:
@@ -222,7 +215,7 @@ Otwórz **Ustawienia → Log Bluetooth**, kliknij **Kopiuj log** i dołącz go d
 
 ## Informacje techniczne
 
-- Jeden plik `index.html` (HTML, CSS, JavaScript) bez zależności i bez budowania.
+- Czysty JavaScript (moduły ES), HTML i CSS – bez frameworka i bez budowania. Strona działa z dowolnego serwera statycznego (tu: GitHub Pages).
 - Komunikacja: **Web Bluetooth** i standard **FTMS** (usługa `0x1826`):
   - `0x2ACD` Treadmill Data: prędkość, dystans, nachylenie, kalorie, tętno,
   - `0x2AD9` Fitness Machine Control Point: start, pauza, stop, prędkość, nachylenie,
@@ -231,12 +224,38 @@ Otwórz **Ustawienia → Log Bluetooth**, kliknij **Kopiuj log** i dołącz go d
   - `0x2ACC` Fitness Machine Feature: dostępne funkcje.
 - Bieżnia przesyła nachylenie w polu FTMS przeznaczonym na procenty, ale w praktyce są to **poziomy 0–15**. Przybliżony % aplikacja liczy z kąta podanego w Ustawieniach.
 - `manifest.webmanifest` i `sw.js` pozwalają zainstalować stronę jako aplikację i używać jej offline.
+- Moduły ES nie działają z pliku otwartego dwuklikiem (`file://`), dlatego aplikację uruchamia się z serwera – lokalnie przez `npm start`.
 
-### Pliki
+## Dla programistów
 
-| Plik | Opis |
+Opis architektury, przepływu danych i zasad rozwijania kodu: **[docs/ARCHITEKTURA.md](docs/ARCHITEKTURA.md)**.
+
+### Uruchomienie lokalne
+
+Wymagany Node.js 22+ i Chrome (do testów e2e).
+
+```bash
+npm install          # narzędzia deweloperskie: ESLint, Prettier, TypeScript, Playwright
+npm start            # serwer na http://localhost:8080/ (Web Bluetooth działa na localhost)
+```
+
+### Polecenia
+
+| Polecenie | Co robi |
 |---|---|
-| `index.html` | Cała aplikacja |
-| `manifest.webmanifest` | Nazwa, kolory i ikony aplikacji |
-| `sw.js` | Service worker (praca offline i aktualizacje) |
-| `icons/` | Ikony aplikacji |
+| `npm test` | testy jednostkowe i e2e |
+| `npm run test:unit` | testy jednostkowe (`node:test`, bez przeglądarki, < 1 s) |
+| `npm run test:e2e` | testy całej aplikacji w Chrome z symulowaną bieżnią FTMS |
+| `npm run lint` | ESLint |
+| `npm run format` | formatowanie kodu (Prettier) |
+| `npm run typecheck` | sprawdzanie typów z komentarzy JSDoc (TypeScript, bez kompilacji) |
+| `npm run version` | aktualizuje listę plików i wersję w `sw.js` |
+| `npm run check` | wszystko powyżej naraz – to samo, co uruchamia CI |
+
+Testy e2e szukają Chrome przez Playwright (`channel: "chrome"`). Inną przeglądarkę wskażesz zmienną `CHROME_PATH`.
+
+### Zasady
+
+- Przed commitem: `npm run format && npm run version && npm run check`.
+- GitHub Actions uruchamia `npm run check` przy każdym pushu i pull requeście.
+- Każda zmiana w gałęzi `main` trafia na GitHub Pages w ciągu ok. minuty, a zainstalowane aplikacje pokażą pasek aktualizacji.

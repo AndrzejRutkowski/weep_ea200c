@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Instalacja narzędzi
+        run: npm install --no-audit --no-fund
+      - name: ESLint
+        run: npm run lint
+      - name: Prettier
+        run: npm run format:check
+      - name: Typy (JSDoc + TypeScript)
+        run: npm run typecheck
+      - name: Wersja service workera aktualna
+        run: node tools/update-sw.mjs --check
+      - name: Testy jednostkowe
+        run: npm run test:unit
+      - name: Testy e2e (Chrome z symulowaną bieżnią)
+        run: npm run test:e2e
+        env:
+          PW_CHANNEL: chrome
