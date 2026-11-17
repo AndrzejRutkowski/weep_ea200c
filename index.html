@@ -1,0 +1,1139 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f1115">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-title" content="Bieżnia">
+<title>Bieżnia – programy (FTMS)</title>
+<style>
+  :root{
+    --bg:#0f1115; --panel:#181b22; --panel2:#20242d; --line:#2c313c;
+    --text:#e8eaef; --muted:#9aa1ae; --accent:#9be15d; --accent2:#4cc3ff;
+    --warn:#ffb547; --bad:#ff5d5d; --radius:14px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);
+    font:15px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+  .wrap{max-width:1000px;margin:0 auto;padding:12px}
+  header{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+  header h1{font-size:18px;margin:0;font-weight:650;letter-spacing:.2px}
+  .pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:99px;background:var(--panel2);color:var(--muted);font-size:13px}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--bad)}
+  .dot.ok{background:var(--accent)} .dot.mid{background:var(--warn)}
+  .spacer{flex:1}
+  button{font:inherit;color:var(--text);background:var(--panel2);border:1px solid var(--line);
+    border-radius:10px;padding:9px 14px;cursor:pointer;touch-action:manipulation}
+  button:hover{border-color:#3d4452}
+  button:disabled{opacity:.45;cursor:default}
+  button.primary{background:var(--accent);color:#11140d;border-color:transparent;font-weight:650}
+  button.danger{background:var(--bad);color:#fff;border-color:transparent;font-weight:650}
+  button.ghost{background:transparent}
+  button.big{padding:14px 18px;font-size:17px;border-radius:12px}
+  button.sm{padding:5px 9px;font-size:13px;border-radius:8px}
+  .tabs{display:flex;gap:6px;margin:4px 0 12px}
+  .tabs button{flex:1}
+  .tabs button.active{background:var(--text);color:var(--bg);border-color:transparent;font-weight:600}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-bottom:12px}
+  .panel h2{font-size:14px;margin:0 0 10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.6px}
+  .grid{display:grid;gap:10px}
+  .stats{grid-template-columns:repeat(3,1fr)}
+  @media (min-width:700px){ .stats{grid-template-columns:repeat(6,1fr)} }
+  .stat{background:var(--panel2);border-radius:12px;padding:10px 12px}
+  .stat .l{font-size:12px;color:var(--muted)}
+  .stat .v{font-size:26px;font-weight:650;font-variant-numeric:tabular-nums;line-height:1.15}
+  .stat .u{font-size:13px;color:var(--muted);margin-left:3px;font-weight:500}
+  .stat.hero .v{font-size:34px;color:var(--accent)}
+  .stat.hero2 .v{font-size:34px;color:var(--accent2)}
+  .seg{display:flex;gap:12px;align-items:stretch;flex-wrap:wrap}
+  .seg .now{flex:2;min-width:220px;background:var(--panel2);border-radius:12px;padding:12px}
+  .seg .next{flex:1;min-width:160px;background:var(--panel2);border-radius:12px;padding:12px;color:var(--muted)}
+  .seg .t{font-size:44px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1}
+  .seg .n{font-weight:600;margin-bottom:4px}
+  .bar{height:8px;background:#0b0d11;border-radius:99px;overflow:hidden;margin-top:10px}
+  .bar>div{height:100%;background:var(--accent);width:0%}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .ctrl{display:flex;gap:8px;flex-wrap:wrap}
+  .ctrl>*{flex:1;min-width:120px}
+  .manual{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .knob{background:var(--panel2);border-radius:12px;padding:10px;display:flex;align-items:center;gap:8px;justify-content:space-between}
+  .knob .val{font-size:22px;font-weight:650;font-variant-numeric:tabular-nums;text-align:center;flex:1}
+  .knob button{font-size:20px;width:48px;padding:8px 0}
+  select,input,textarea{font:inherit;color:var(--text);background:#0f1115;border:1px solid var(--line);border-radius:9px;padding:8px 10px}
+  select{min-width:200px;flex:1}
+  input[type=number]{width:90px}
+  textarea{width:100%;min-height:120px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px}
+  label.inline{display:flex;align-items:center;gap:8px;color:var(--muted)}
+  svg.profile{width:100%;height:120px;display:block;background:#0b0d11;border-radius:10px}
+  .hint{color:var(--muted);font-size:13px}
+  .warnbox{background:#2a2214;border:1px solid #5a4318;color:#ffd79a;border-radius:12px;padding:10px 12px;margin-bottom:12px;font-size:14px}
+  .okbox{background:#16240f;border:1px solid #2f5220;color:#c9f3a9;border-radius:12px;padding:10px 12px;margin-bottom:12px;font-size:14px}
+  .hidden{display:none !important}
+  /* editor */
+  .ed-layout{display:grid;gap:12px}
+  @media (min-width:800px){ .ed-layout{grid-template-columns:240px 1fr} }
+  .plist{display:flex;flex-direction:column;gap:6px}
+  .plist button{text-align:left}
+  .plist button.sel{border-color:var(--accent);background:#1d2616}
+  .segrow{display:grid;grid-template-columns:28px 1fr 84px 84px 84px 150px;gap:6px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}
+  .segrow input{width:100%}
+  .segrow .idx{color:var(--muted);font-size:13px;text-align:right}
+  .segrow .acts{display:flex;gap:4px}
+  .seghead{color:var(--muted);font-size:12px;border-bottom:1px solid var(--line)}
+  @media (max-width:640px){
+    .segrow{grid-template-columns:24px 1fr 1fr 1fr;}
+    .segrow .nm{grid-column:2 / 5}
+    .segrow .acts{grid-column:2 / 5;justify-content:flex-end}
+    .segrow input[data-f=dur]{grid-column:2}
+    .seghead{position:sticky;top:0;background:var(--panel);z-index:1}
+    .seghead>div:nth-child(2),.seghead>div:nth-child(6){display:none}
+    .seghead>div:nth-child(3){grid-column:2}
+  }
+  .gen{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:var(--panel2);padding:10px;border-radius:12px;margin-top:10px}
+  .gen input{width:74px}
+  pre.log{background:#0b0d11;border-radius:10px;padding:10px;max-height:260px;overflow:auto;font-size:12px;margin:8px 0 0;white-space:pre-wrap}
+  details summary{cursor:pointer;color:var(--muted)}
+  .kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:14px}
+  .kv div:nth-child(odd){color:var(--muted)}
+  .summary{font-size:15px}
+  .legend{display:flex;gap:14px;font-size:12px;color:var(--muted);margin-top:6px}
+  .legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px;background:var(--c)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Bieżnia · programy</h1>
+    <span class="pill"><span class="dot" id="connDot"></span><span id="connText">Niepołączona</span></span>
+    <span class="spacer"></span>
+    <button id="btnConnect" class="primary">Połącz z bieżnią</button>
+    <button id="btnDisconnect" class="hidden">Rozłącz</button>
+  </header>
+
+  <div id="noBt" class="warnbox hidden">
+    Ta przeglądarka nie obsługuje Web Bluetooth. Na komputerze użyj <b>Chrome</b> lub <b>Edge</b> (Safari nie działa),
+    na iPhonie darmowej przeglądarki <b>Bluefy</b>. Edytor programów działa mimo to.
+  </div>
+
+  <div class="tabs">
+    <button data-tab="train" class="active">Trening</button>
+    <button data-tab="programs">Programy</button>
+    <button data-tab="settings">Ustawienia</button>
+  </div>
+
+  <!-- ============ TRENING ============ -->
+  <section id="tab-train">
+    <div class="panel">
+      <div class="grid stats">
+        <div class="stat hero"><div class="l">Prędkość</div><div class="v"><span id="sSpeed">–</span><span class="u">km/h</span></div></div>
+        <div class="stat hero2"><div class="l">Nachylenie</div><div class="v"><span class="u" style="margin:0 3px 0 0">poz.</span><span id="sIncl">–</span></div><div class="l" id="sInclX">&nbsp;</div></div>
+        <div class="stat"><div class="l">Czas programu</div><div class="v" id="sTime">0:00</div></div>
+        <div class="stat"><div class="l">Dystans</div><div class="v"><span id="sDist">0,00</span><span class="u">km</span></div></div>
+        <div class="stat"><div class="l">Kalorie</div><div class="v"><span id="sKcal">–</span><span class="u">kcal</span></div></div>
+        <div class="stat"><div class="l">Tętno</div><div class="v"><span id="sHr">–</span><span class="u">bpm</span></div></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Program</h2>
+      <div class="row" style="margin-bottom:10px">
+        <select id="selProgram"></select>
+        <span class="hint" id="progInfo"></span>
+      </div>
+      <svg class="profile" id="profileTrain" viewBox="0 0 1000 200" preserveAspectRatio="none"></svg>
+      <div class="legend"><span style="--c:#9be15d">prędkość</span><span style="--c:#4cc3ff">nachylenie</span></div>
+
+      <div id="segBox" class="seg hidden" style="margin-top:12px">
+        <div class="now">
+          <div class="n" id="segName">–</div>
+          <div class="t" id="segRemain">0:00</div>
+          <div class="hint" id="segTarget"></div>
+          <div class="bar"><div id="segBar"></div></div>
+        </div>
+        <div class="next">
+          <div class="n">Następnie</div>
+          <div id="segNext">–</div>
+          <div style="margin-top:8px">Do końca: <b id="progRemain">–</b></div>
+        </div>
+      </div>
+      <div id="phaseMsg" class="hint" style="margin-top:10px"></div>
+      <div id="runWarn" class="warnbox hidden" style="margin:10px 0 0"></div>
+      <div id="summary" class="okbox summary hidden" style="margin-top:12px"></div>
+
+      <div class="ctrl" style="margin-top:12px">
+        <button id="btnStart" class="primary big">▶ Start programu</button>
+        <button id="btnPause" class="big hidden">❚❚ Pauza</button>
+        <button id="btnResume" class="primary big hidden">▶ Wznów</button>
+        <button id="btnStop" class="danger big">■ Stop</button>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <button id="btnPrev" class="sm" disabled>◀ Poprzedni odcinek</button>
+        <button id="btnNext" class="sm" disabled>Następny odcinek ▶</button>
+        <button id="btnPlus" class="sm" disabled>+1 min do odcinka</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Sterowanie ręczne</h2>
+      <div class="manual">
+        <div class="knob"><button id="spdDown">−</button><div class="val"><span id="mSpeed">–</span> <span class="hint">km/h</span></div><button id="spdUp">+</button></div>
+        <div class="knob"><button id="incDown">−</button><div class="val"><span class="hint">poz.</span> <span id="mIncl">–</span><div class="hint" id="mInclX" style="font-size:12px;font-weight:400">&nbsp;</div></div><button id="incUp">+</button></div>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button id="btnBeltStart">Start taśmy</button>
+        <button id="btnBeltPause">Pauza taśmy</button>
+        <span class="hint">W trakcie programu zmiana ręczna obowiązuje do końca bieżącego odcinka.</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PROGRAMY ============ -->
+  <section id="tab-programs" class="hidden">
+    <div class="ed-layout">
+      <div class="panel">
+        <h2>Twoje programy</h2>
+        <div class="plist" id="plist"></div>
+        <div class="row" style="margin-top:10px">
+          <button id="btnNewProg" class="sm">+ Nowy</button>
+          <button id="btnDupProg" class="sm">Duplikuj</button>
+          <button id="btnDelProg" class="sm">Usuń</button>
+        </div>
+      </div>
+      <div class="panel">
+        <h2>Edycja</h2>
+        <div class="row" style="margin-bottom:10px">
+          <input id="edName" placeholder="Nazwa programu" style="flex:1;min-width:200px">
+        </div>
+        <svg class="profile" id="profileEdit" viewBox="0 0 1000 200" preserveAspectRatio="none"></svg>
+        <div class="hint" id="edInfo" style="margin:6px 0 8px"></div>
+        <div class="segrow seghead"><div></div><div>Nazwa odcinka</div><div>Czas (m:ss)</div><div>km/h</div><div id="edInclHead">Nachyl. (poz.)</div><div></div></div>
+        <div id="segList"></div>
+        <div class="row" style="margin-top:10px">
+          <button id="btnAddSeg" class="sm">+ Dodaj odcinek</button>
+        </div>
+        <div class="gen">
+          <b>Generator interwałów:</b>
+          <span>powtórz</span><input id="gN" type="number" min="1" value="6">
+          <span>× szybko</span><input id="gW" value="1:00" title="czas">
+          <input id="gWs" type="number" step="0.1" value="9" title="km/h"><span>km/h</span>
+          <span>+ wolno</span><input id="gR" value="2:00" title="czas">
+          <input id="gRs" type="number" step="0.1" value="5" title="km/h"><span>km/h</span>
+          <span>nachyl. (poz.)</span><input id="gI" type="number" step="1" value="0">
+          <button id="btnGen" class="sm">Dodaj na końcu</button>
+        </div>
+        <p class="hint">Zmiany zapisują się automatycznie w tej przeglądarce. Zrób eksport, żeby mieć kopię albo przenieść programy na inne urządzenie.</p>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>Zapis w pliku HTML (opcjonalnie)</h2>
+      <p class="hint" style="margin-top:0">Programy zawsze zapisują się automatycznie w tej przeglądarce. Dzięki temu zapisowi trafią też do samego pliku strony, więc zobaczysz je po otwarciu go w innej przeglądarce albo na innym urządzeniu.</p>
+      <div class="row">
+        <button id="btnSaveFile" class="sm hidden">Zapisz do pliku</button>
+        <button id="btnPickFile" class="sm ghost hidden">Wybierz inny plik…</button>
+        <button id="btnDownloadHtml" class="sm">Pobierz kopię strony z programami</button>
+      </div>
+      <div class="hint" id="fileState" style="margin-top:8px"></div>
+    </div>
+    <div class="panel">
+      <h2>Eksport / import</h2>
+      <div class="row">
+        <button id="btnExportFile" class="sm">Pobierz plik .json</button>
+        <button id="btnExportCopy" class="sm">Kopiuj JSON</button>
+        <label class="sm" style="display:inline-flex"><input id="fileImport" type="file" accept=".json,application/json" style="max-width:220px"></label>
+      </div>
+      <textarea id="jsonBox" placeholder="Tu możesz wkleić JSON z programami i kliknąć „Importuj z pola”" style="margin-top:10px"></textarea>
+      <div class="row" style="margin-top:8px">
+        <button id="btnImportText" class="sm">Importuj z pola (dodaj)</button>
+        <span class="hint" id="ioMsg"></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ USTAWIENIA ============ -->
+  <section id="tab-settings" class="hidden">
+    <div class="panel">
+      <h2>Ustawienia</h2>
+      <div class="grid" style="gap:12px">
+        <label class="inline">Opóźnienie po starcie taśmy (s)
+          <input id="setDelay" type="number" min="0" max="15" step="1"></label>
+        <span class="hint" style="margin-top:-8px">Bieżnia po komendzie „start” zwykle odlicza 3 s. Dopiero potem aplikacja ustawia prędkość odcinka.</span>
+        <label class="inline">Po zakończeniu programu
+          <select id="setEnd" style="min-width:0;flex:0 1 auto">
+            <option value="stop">zatrzymaj taśmę</option>
+            <option value="cool">zostaw wolny marsz (najniższa prędkość, nachyl. 0)</option>
+          </select></label>
+        <label class="inline">Kąt przy najwyższym poziomie nachylenia (°)
+          <input id="setInclDeg" type="number" min="1" max="20" step="0.1"></label>
+        <span class="hint" style="margin-top:-8px">Służy tylko do przeliczania poziomów na %. Według sklepu WEEP to 6°. Możesz to zmierzyć: ustaw najwyższy poziom i połóż telefon na pasie (iPhone: aplikacja Miarka → Poziomica).</span>
+        <label class="inline">Krok ręcznej prędkości (km/h)
+          <input id="setSpdStep" type="number" min="0.1" max="2" step="0.1"></label>
+        <label class="inline"><input id="setBeep" type="checkbox"> Sygnał dźwiękowy 3-2-1 przed zmianą odcinka</label>
+        <label class="inline"><input id="setVoice" type="checkbox"> Komunikat głosowy przy zmianie odcinka</label>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>Bieżnia</h2>
+      <div class="kv" id="devInfo"><div>Status</div><div>niepołączona</div></div>
+      <details style="margin-top:12px">
+        <summary>Log Bluetooth (do diagnostyki)</summary>
+        <pre class="log" id="log"></pre>
+        <button id="btnCopyLog" class="sm" style="margin-top:6px">Kopiuj log</button>
+      </details>
+    </div>
+  </section>
+</div>
+
+<script id="embedded-programs" type="application/json">null</script>
+<script>
+"use strict";
+/* Kopia strony w stanie „z pliku”, zanim cokolwiek zostanie wyrenderowane – potrzebna do zapisu programów w HTML */
+const PRISTINE_HTML = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+/* =====================================================================
+   Stałe FTMS
+   ===================================================================== */
+const U = n => "0000" + n.toString(16).padStart(4, "0") + "-0000-1000-8000-00805f9b34fb";
+const UUID = {
+  FTMS: U(0x1826), DIS: U(0x180a),
+  FEATURE: U(0x2acc), TREAD: U(0x2acd), SPEED_RANGE: U(0x2ad4), INCL_RANGE: U(0x2ad5),
+  CP: U(0x2ad9), STATUS: U(0x2ada),
+  MANUF: U(0x2a29), MODEL: U(0x2a24), FW: U(0x2a26), HW: U(0x2a27), SN: U(0x2a25)
+};
+const OP = { REQ_CONTROL: 0x00, RESET: 0x01, SET_SPEED: 0x02, SET_INCL: 0x03, START: 0x07, STOP_PAUSE: 0x08 };
+const OP_NAME = { 0: "Request Control", 1: "Reset", 2: "Set Speed", 3: "Set Incline", 7: "Start/Resume", 8: "Stop/Pause" };
+const RESULT = { 1: "OK", 2: "nieobsługiwane", 3: "zły parametr", 4: "operacja nieudana", 5: "brak kontroli" };
+
+/* =====================================================================
+   Pomocnicze
+   ===================================================================== */
+const $ = id => document.getElementById(id);
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const fmtNum = (v, d = 1) => (v == null || isNaN(v)) ? "–" : v.toFixed(d).replace(".", ",");
+function fmtTime(sec) {
+  sec = Math.max(0, Math.round(sec));
+  const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
+  return h ? `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}` : `${m}:${String(s).padStart(2, "0")}`;
+}
+function parseTime(str) {
+  str = String(str).trim().replace(",", ".");
+  if (!str) return NaN;
+  if (!str.includes(":")) return Math.round(parseFloat(str) * 60); // same minuty
+  const p = str.split(":").map(Number);
+  if (p.some(isNaN)) return NaN;
+  return p.length === 3 ? p[0] * 3600 + p[1] * 60 + p[2] : p[0] * 60 + p[1];
+}
+const num = v => parseFloat(String(v).replace(",", "."));
+function uid() { return Math.random().toString(36).slice(2, 10); }
+
+const logLines = [];
+function log(msg) {
+  const t = new Date().toLocaleTimeString("pl-PL");
+  logLines.push(`[${t}] ${msg}`);
+  if (logLines.length > 300) logLines.shift();
+  const el = $("log");
+  if (el) { el.textContent = logLines.join("\n"); el.scrollTop = el.scrollHeight; }
+}
+const hex = dv => Array.from(new Uint8Array(dv.buffer, dv.byteOffset, dv.byteLength)).map(b => b.toString(16).padStart(2, "0")).join(" ");
+
+/* =====================================================================
+   Pamięć (localStorage z zabezpieczeniem)
+   ===================================================================== */
+const store = {
+  get(k, def) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : def; } catch (e) { return def; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* brak pamięci – trudno */ } }
+};
+const K_PROG = "bieznia.programs.v1", K_SET = "bieznia.settings.v1", K_SEL = "bieznia.selected.v1";
+
+const DEFAULT_SETTINGS = { startDelay: 4, endAction: "stop", inclMaxDeg: 6, spdStep: 0.5, beep: true, voice: false };
+let settings = Object.assign({}, DEFAULT_SETTINGS, store.get(K_SET, {}));
+
+function seg(name, dur, speed, incline) { return { id: uid(), name, dur, speed, incline }; }
+function defaultPrograms() {
+  const intervals = [seg("Rozgrzewka", 300, 5, 0)];
+  for (let i = 1; i <= 6; i++) { intervals.push(seg(`Szybko ${i}`, 60, 9, 0)); intervals.push(seg(`Wolno ${i}`, 120, 5.5, 0)); }
+  intervals.push(seg("Schłodzenie", 120, 4, 0));
+  return [
+    { id: uid(), name: "Interwały 25 min", segments: intervals },
+    { id: uid(), name: "Marsz pod górę 26 min", segments: [
+      seg("Rozgrzewka", 180, 4, 0), seg("Pod górę", 600, 5, 4), seg("Stromo", 300, 5, 8),
+      seg("Pod górę", 300, 5, 4), seg("Schłodzenie", 180, 4, 0)] },
+    { id: uid(), name: "Test nachylenia (6 min)", segments: [
+      seg("Płasko", 60, 3, 0), seg("Nachyl. 2", 60, 3, 2), seg("Nachyl. 5", 60, 3, 5),
+      seg("Nachyl. 10", 60, 3, 10), seg("Nachyl. 15", 60, 3, 15), seg("Płasko", 60, 3, 0)] }
+  ];
+}
+const K_TS = "bieznia.programs.ts.v1", K_FILE_TS = "bieznia.filesaved.ts.v1";
+let programs = store.get(K_PROG, null);
+let progTs = store.get(K_TS, null);
+if (Array.isArray(programs) && programs.length && !progTs) { progTs = Date.now(); store.set(K_TS, progTs); } // starsze wersje strony
+let loadedFromFile = false;
+try {
+  const emb = JSON.parse(document.getElementById("embedded-programs").textContent || "null");
+  if (emb && Array.isArray(emb.programs) && emb.programs.length && (!Array.isArray(programs) || !programs.length || (emb.savedAt || 0) > (progTs || 0))) {
+    programs = emb.programs; progTs = emb.savedAt || Date.now(); loadedFromFile = true;
+    if (emb.settings) settings = Object.assign({}, DEFAULT_SETTINGS, emb.settings);
+    store.set(K_PROG, programs); store.set(K_TS, progTs); store.set(K_SET, settings); store.set(K_FILE_TS, progTs);
+  }
+} catch (e) { /* uszkodzony blok – ignorujemy */ }
+if (!Array.isArray(programs) || !programs.length) { programs = defaultPrograms(); progTs = Date.now(); store.set(K_PROG, programs); store.set(K_TS, progTs); }
+let selectedId = store.get(K_SEL, programs[0].id);
+if (!programs.find(p => p.id === selectedId)) selectedId = programs[0].id;
+let editId = selectedId;
+const saveProgs = () => { progTs = Date.now(); store.set(K_PROG, programs); store.set(K_TS, progTs); if (typeof renderFileState === "function") renderFileState(); };
+const progById = id => programs.find(p => p.id === id);
+const progTotal = p => p.segments.reduce((a, s) => a + s.dur, 0);
+const progDist = p => p.segments.reduce((a, s) => a + s.speed * s.dur / 3600, 0);
+
+/* =====================================================================
+   Stan bieżni
+   ===================================================================== */
+const st = {
+  device: null, server: null, cp: null, connected: false, hasControl: false,
+  speedRange: { min: 1, max: 12, inc: 0.1, known: false },
+  inclRange: { min: 0, max: 15, inc: 1, known: false },
+  canSpeed: true, canIncl: true,
+  data: { speed: null, incline: null, dist: null, kcal: null, hr: null, elapsed: null },
+  target: { speed: null, incline: null },
+  info: {}
+};
+let run = null; // stan wykonywanego programu
+
+/* =====================================================================
+   Kolejka komend Control Point (Web Bluetooth nie lubi równoległych operacji)
+   ===================================================================== */
+let cpChain = Promise.resolve();
+let cpPending = null;
+
+function onCpIndication(ev) {
+  const dv = ev.target.value;
+  if (dv.byteLength >= 3 && dv.getUint8(0) === 0x80) {
+    const op = dv.getUint8(1), res = dv.getUint8(2);
+    log(`← odpowiedź ${OP_NAME[op] || op}: ${RESULT[res] || res}`);
+    if (cpPending && cpPending.op === op) { const p = cpPending; cpPending = null; clearTimeout(p.timer); p.resolve(res); }
+  } else log(`← CP ${hex(dv)}`);
+}
+
+function cpRaw(bytes) {
+  const op = bytes[0];
+  const job = async () => {
+    if (!st.cp || !st.connected) throw new Error("brak połączenia");
+    const resP = new Promise(resolve => {
+      cpPending = { op, resolve, timer: setTimeout(() => { if (cpPending && cpPending.op === op) { cpPending = null; log(`⚠ brak odpowiedzi na ${OP_NAME[op]}`); resolve(0); } }, 3000) };
+    });
+    const buf = new Uint8Array(bytes);
+    log(`→ ${OP_NAME[op] || op} [${Array.from(buf).map(b => b.toString(16).padStart(2, "0")).join(" ")}]`);
+    if (st.cp.writeValueWithResponse) await st.cp.writeValueWithResponse(buf); else await st.cp.writeValue(buf);
+    return resP;
+  };
+  const p = cpChain.then(job, job);
+  cpChain = p.catch(() => {});
+  return p;
+}
+
+async function cp(bytes) {
+  try {
+    if (!st.hasControl && bytes[0] !== OP.REQ_CONTROL) await requestControl();
+    let res = await cpRaw(bytes);
+    if (res === 5) { st.hasControl = false; await requestControl(); res = await cpRaw(bytes); }
+    return res;
+  } catch (e) { log(`✖ ${e.message || e}`); return -1; }
+}
+async function requestControl() {
+  const r = await cpRaw([OP.REQ_CONTROL]);
+  st.hasControl = (r === 1 || r === 0); // 0 = brak odpowiedzi; spróbujemy i tak
+  return r;
+}
+
+function setSpeed(kmh) {
+  const r = st.speedRange;
+  kmh = clamp(Math.round(kmh / r.inc) * r.inc, r.min, r.max);
+  kmh = Math.round(kmh * 100) / 100;
+  st.target.speed = kmh; renderManual();
+  const v = Math.round(kmh * 100);
+  return cp([OP.SET_SPEED, v & 0xff, (v >> 8) & 0xff]);
+}
+function setIncline(pct) {
+  if (!st.canIncl) return Promise.resolve(2);
+  const r = st.inclRange;
+  pct = clamp(Math.round(pct / r.inc) * r.inc, r.min, r.max);
+  pct = Math.round(pct * 10) / 10;
+  st.target.incline = pct; renderManual();
+  const v = Math.round(pct * 10) & 0xffff;
+  return cp([OP.SET_INCL, v & 0xff, (v >> 8) & 0xff]);
+}
+const beltStart = () => cp([OP.START]);
+const beltPause = () => cp([OP.STOP_PAUSE, 0x02]);
+const beltStop = () => cp([OP.STOP_PAUSE, 0x01]);
+
+/* =====================================================================
+   Parsowanie danych z bieżni
+   ===================================================================== */
+function parseTreadmillData(dv) {
+  const r = {}; let o = 2;
+  if (dv.byteLength < 2) return r;
+  const f = dv.getUint16(0, true);
+  const has = n => o + n <= dv.byteLength;
+  if (!(f & 0x0001)) { if (!has(2)) return r; r.speed = dv.getUint16(o, true) / 100; o += 2; }
+  if (f & 0x0002) { if (!has(2)) return r; o += 2; }                       // średnia prędkość
+  if (f & 0x0004) { if (!has(3)) return r; r.dist = dv.getUint8(o) | (dv.getUint8(o + 1) << 8) | (dv.getUint8(o + 2) << 16); o += 3; }
+  if (f & 0x0008) { if (!has(4)) return r; r.incline = dv.getInt16(o, true) / 10; o += 4; } // + kąt rampy
+  if (f & 0x0010) { if (!has(4)) return r; o += 4; }                       // przewyższenie
+  if (f & 0x0020) { if (!has(1)) return r; o += 1; }                       // tempo chwilowe
+  if (f & 0x0040) { if (!has(1)) return r; o += 1; }                       // tempo średnie
+  if (f & 0x0080) { if (!has(5)) return r; const k = dv.getUint16(o, true); if (k !== 0xffff) r.kcal = k; o += 5; }
+  if (f & 0x0100) { if (!has(1)) return r; const h = dv.getUint8(o); if (h) r.hr = h; o += 1; }
+  if (f & 0x0200) { if (!has(1)) return r; o += 1; }                       // MET
+  if (f & 0x0400) { if (!has(2)) return r; r.elapsed = dv.getUint16(o, true); o += 2; }
+  return r;
+}
+
+function onTreadData(ev) {
+  const d = parseTreadmillData(ev.target.value);
+  Object.assign(st.data, d);
+  renderStats();
+}
+
+function onStatus(ev) {
+  const dv = ev.target.value; if (!dv.byteLength) return;
+  const op = dv.getUint8(0), p = dv.byteLength > 1 ? dv.getUint8(1) : null;
+  const names = { 1: "reset", 2: "zatrzymana/pauza", 3: "zatrzymana (bezpieczeństwo)", 4: "uruchomiona", 5: "zmiana prędkości", 6: "zmiana nachylenia", 0xff: "utracono kontrolę" };
+  log(`ⓘ status: ${names[op] || op} [${hex(dv)}]`);
+  if (op === 0xff) st.hasControl = false;
+  if (!run) return;
+  // Reakcja na pilota / przycisk na bieżni
+  if ((op === 2 || op === 3) && (run.phase === "running" || run.phase === "starting" || run.phase === "resuming")) {
+    run.phase = "paused"; run.pausedBy = "z bieżni lub pilota"; releaseWake(); renderRun();
+  } else if (op === 4 && run.phase === "paused") {
+    run.phase = "resuming"; run.wait = settings.startDelay; renderRun();
+  }
+}
+
+/* =====================================================================
+   Połączenie
+   ===================================================================== */
+async function connect() {
+  if (!navigator.bluetooth) { $("noBt").classList.remove("hidden"); return; }
+  try {
+    const device = await navigator.bluetooth.requestDevice({
+      filters: [{ services: [UUID.FTMS] }, { namePrefix: "FS-" }],
+      optionalServices: [UUID.FTMS, UUID.DIS]
+    });
+    st.device = device;
+    device.addEventListener("gattserverdisconnected", onDisconnected);
+    await setup();
+  } catch (e) {
+    if (e && e.name === "NotFoundError") log("Wybór urządzenia anulowany");
+    else { log(`✖ połączenie: ${e.message || e}`); setConn("err", "Błąd połączenia"); }
+  }
+}
+
+async function refreshSpeedRange(first) {
+  try {
+    const dv = await (await st.svc.getCharacteristic(UUID.SPEED_RANGE)).readValue();
+    const r = { min: dv.getUint16(0, true) / 100, max: dv.getUint16(2, true) / 100, inc: (dv.getUint16(4, true) / 100) || 0.1, known: true };
+    if (first || r.max !== st.speedRange.max || r.min !== st.speedRange.min)
+      log(`Zakres prędkości: ${hex(dv)} → ${r.min}–${r.max} km/h, krok ${r.inc}`);
+    st.speedRange = r;
+  } catch (e) { if (first) log("Brak zakresu prędkości (2AD4) – zakładam 1–12 km/h"); }
+  renderDevInfo();
+}
+
+async function setup() {
+  setConn("mid", "Łączenie…");
+  log(`Łączenie z ${st.device.name || "bieżnią"}…`);
+  st.server = await st.device.gatt.connect();
+  const svc = await st.server.getPrimaryService(UUID.FTMS);
+  st.svc = svc;
+
+  // Cechy
+  try {
+    const dv = await (await svc.getCharacteristic(UUID.FEATURE)).readValue();
+    const feat = dv.getUint32(0, true), tgt = dv.byteLength >= 8 ? dv.getUint32(4, true) : 0;
+    st.canSpeed = !!(tgt & 1); st.canIncl = !!(tgt & 2);
+    st.info.features = `0x${feat.toString(16)}`; st.info.targets = `0x${tgt.toString(16)}`;
+    log(`Cechy: ${hex(dv)} → zadawanie prędkości: ${st.canSpeed ? "tak" : "nie"}, nachylenia: ${st.canIncl ? "tak" : "nie"}`);
+    if (!tgt) { st.canSpeed = true; st.canIncl = true; log("Bieżnia nie deklaruje celów – próbuję mimo to"); }
+  } catch (e) { log("Brak charakterystyki cech (2ACC)"); }
+
+  await refreshSpeedRange(true);
+
+  try {
+    const dv = await (await svc.getCharacteristic(UUID.INCL_RANGE)).readValue();
+    st.inclRange = { min: dv.getInt16(0, true) / 10, max: dv.getInt16(2, true) / 10, inc: (dv.getUint16(4, true) / 10) || 1, known: true };
+    log(`Zakres nachylenia: ${hex(dv)} → ${st.inclRange.min}–${st.inclRange.max}, krok ${st.inclRange.inc}`);
+  } catch (e) { log("Brak zakresu nachylenia (2AD5) – zakładam 0–15"); }
+
+  const td = await svc.getCharacteristic(UUID.TREAD);
+  td.addEventListener("characteristicvaluechanged", onTreadData);
+  await td.startNotifications();
+
+  try {
+    st.cp = await svc.getCharacteristic(UUID.CP);
+    st.cp.addEventListener("characteristicvaluechanged", onCpIndication);
+    await st.cp.startNotifications(); // włącza indications
+  } catch (e) { st.cp = null; log("✖ Brak Control Point (2AD9) – sterowanie niemożliwe, tylko odczyt"); }
+
+  try {
+    const s = await svc.getCharacteristic(UUID.STATUS);
+    s.addEventListener("characteristicvaluechanged", onStatus);
+    await s.startNotifications();
+  } catch (e) { log("Brak statusu maszyny (2ADA)"); }
+
+  try {
+    const dis = await st.server.getPrimaryService(UUID.DIS);
+    const dec = new TextDecoder();
+    for (const [k, u] of [["Producent", UUID.MANUF], ["Model", UUID.MODEL], ["Firmware", UUID.FW], ["Hardware", UUID.HW], ["Nr seryjny", UUID.SN]]) {
+      try { st.info[k] = dec.decode(await (await dis.getCharacteristic(u)).readValue()).replace(/\0/g, ""); } catch (e) {}
+    }
+  } catch (e) {}
+
+  st.connected = true; st.hasControl = false;
+  setConn("ok", st.device.name || "Połączona");
+  log("Połączono ✔");
+  if (st.cp) await requestControl();
+  if (run && run.phase === "paused") run.pausedBy = "rozłączenie – kliknij Wznów";
+  renderAll();
+}
+
+function onDisconnected() {
+  st.connected = false; st.cp = null; st.hasControl = false;
+  if (cpPending) { clearTimeout(cpPending.timer); cpPending.resolve(-1); cpPending = null; }
+  setConn("err", "Rozłączona");
+  log("Bieżnia rozłączona");
+  if (run && run.phase !== "done") { run.phase = "paused"; run.pausedBy = "rozłączenie"; releaseWake(); }
+  renderAll();
+}
+
+async function disconnect() {
+  if (st.device && st.device.gatt.connected) st.device.gatt.disconnect();
+}
+
+function setConn(kind, text) {
+  $("connDot").className = "dot" + (kind === "ok" ? " ok" : kind === "mid" ? " mid" : "");
+  $("connText").textContent = text;
+  $("btnConnect").classList.toggle("hidden", kind === "ok");
+  $("btnConnect").textContent = st.device ? "Połącz ponownie" : "Połącz z bieżnią";
+  $("btnDisconnect").classList.toggle("hidden", kind !== "ok");
+}
+
+/* =====================================================================
+   Silnik programu
+   ===================================================================== */
+let audioCtx = null, wakeLock = null;
+function ensureAudio() { try { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === "suspended") audioCtx.resume(); } catch (e) {} }
+function beep(freq = 880, ms = 120) {
+  if (!audioCtx) return;
+  try {
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.frequency.value = freq; o.connect(g); g.connect(audioCtx.destination);
+    g.gain.setValueAtTime(0.25, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + ms / 1000);
+    o.start(); o.stop(audioCtx.currentTime + ms / 1000 + 0.02);
+  } catch (e) {}
+}
+function say(text) {
+  if (!settings.voice || !window.speechSynthesis) return;
+  try { const u = new SpeechSynthesisUtterance(text); u.lang = "pl-PL"; speechSynthesis.cancel(); speechSynthesis.speak(u); } catch (e) {}
+}
+async function takeWake() { try { if (navigator.wakeLock && !wakeLock) { wakeLock = await navigator.wakeLock.request("screen"); wakeLock.addEventListener("release", () => { wakeLock = null; }); } } catch (e) {} }
+function releaseWake() { try { if (wakeLock) wakeLock.release(); } catch (e) {} wakeLock = null; }
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && run && run.phase === "running") takeWake(); });
+
+/* Poziom nachylenia → przybliżony kąt i procent (liniowo do kąta przy najwyższym poziomie) */
+function inclDeg(level) { const top = st.inclRange.max > 0 ? st.inclRange.max : 15; return (level || 0) / top * settings.inclMaxDeg; }
+function inclDesc(level) {
+  if (level == null || isNaN(level)) return "";
+  const d = inclDeg(level), pct = Math.tan(d * Math.PI / 180) * 100;
+  return `≈${fmtNum(pct)}%`;
+}
+
+function segLabel(s) {
+  const incl = st.canIncl ? `, poz. ${fmtNum(s.incline, s.incline % 1 ? 1 : 0)} (${inclDesc(s.incline)})` : "";
+  return `${fmtNum(s.speed)} km/h${incl}`;
+}
+
+async function applySegment(announce) {
+  if (!run) return;
+  const s = run.program.segments[run.segIdx];
+  if (!s) return;
+  run.manualOverride = false;
+  if (announce) {
+    if (settings.beep) beep(1320, 300);
+    say(`${s.name || "Odcinek " + (run.segIdx + 1)}. ${String(s.speed).replace(".", ",")} kilometrów na godzinę${st.canIncl ? ", poziom nachylenia " + s.incline : ""}`);
+  }
+  if (!st.connected) return;
+  let r = await setSpeed(s.speed);
+  if (r !== 1 && run && run.phase === "running") { await new Promise(t => setTimeout(t, 1500)); r = await setSpeed(s.speed); }
+  if (st.canIncl && s.incline != null) await setIncline(s.incline);
+}
+
+async function startProgram() {
+  ensureAudio();
+  const p = progById(selectedId);
+  if (!p || !p.segments.length) return;
+  if (!st.connected) { alertMsg("Najpierw połącz się z bieżnią."); return; }
+  await refreshSpeedRange(false);
+  $("runWarn").classList.toggle("hidden", !p.segments.some(s => s.speed > st.speedRange.max));
+  $("runWarn").textContent = `Uwaga: bieżnia przyjmuje teraz maks. ${fmtNum(st.speedRange.max)} km/h (tryb chodzenia?). Szybsze odcinki zostaną ograniczone. Podnieś poręcz (tryb biegania), żeby odblokować 12 km/h.`;
+  run = { program: JSON.parse(JSON.stringify(p)), segIdx: 0, segT: 0, t: 0, dist: 0, phase: "starting",
+          wait: settings.startDelay, last: performance.now(), lastBeep: null, startKcal: st.data.kcal, pausedBy: null };
+  $("summary").classList.add("hidden");
+  takeWake();
+  renderRun();
+  await beltStart();
+  // ustaw od razu nachylenie (bezpieczne), prędkość po odliczaniu
+  const s = run.program.segments[0];
+  if (st.canIncl && s.incline != null) setIncline(s.incline);
+}
+
+async function pauseProgram() {
+  if (!run) return;
+  run.phase = "paused"; run.pausedBy = null; releaseWake(); renderRun();
+  await beltPause();
+}
+async function resumeProgram() {
+  if (!run) return;
+  ensureAudio();
+  if (!st.connected) { alertMsg("Bieżnia jest rozłączona – połącz ponownie."); return; }
+  run.phase = "resuming"; run.wait = settings.startDelay; run.last = performance.now(); run.pausedBy = null;
+  takeWake(); renderRun();
+  await beltStart();
+}
+async function stopAll() {
+  const wasRun = run && run.phase !== "done";
+  if (wasRun) finish(true);
+  await beltStop();
+}
+function finish(stoppedByUser) {
+  if (!run) return;
+  run.phase = "done"; releaseWake();
+  const kcal = (st.data.kcal != null && run.startKcal != null && st.data.kcal >= run.startKcal) ? st.data.kcal - run.startKcal : st.data.kcal;
+  const box = $("summary");
+  box.innerHTML = `<b>${stoppedByUser ? "Zatrzymano" : "Program zakończony"} – ${escapeHtml(run.program.name)}</b><br>
+    Czas: <b>${fmtTime(run.t)}</b> · Dystans: <b>${fmtNum(run.dist, 2)} km</b>${kcal != null ? ` · Kalorie: <b>${kcal} kcal</b>` : ""}`;
+  box.classList.remove("hidden");
+  if (!stoppedByUser) {
+    if (settings.beep) { beep(988, 150); setTimeout(() => beep(1319, 350), 180); }
+    say("Koniec programu. Dobra robota!");
+    if (settings.endAction === "stop") beltStop();
+    else { setSpeed(st.speedRange.min); setIncline(Math.max(0, st.inclRange.min)); }
+  }
+  renderRun();
+}
+
+function jumpSeg(delta) {
+  if (!run || run.phase === "done") return;
+  const n = run.program.segments.length;
+  const idx = run.segIdx + delta;
+  if (idx < 0) { run.segT = 0; }
+  else if (idx >= n) { finish(false); return; }
+  else { run.segIdx = idx; run.segT = 0; run.lastBeep = null; }
+  if (run.phase === "running") applySegment(true);
+  renderRun();
+}
+function addMinute() {
+  if (!run || run.phase === "done") return;
+  run.program.segments[run.segIdx].dur += 60; renderRun();
+}
+
+function tick() {
+  const now = performance.now();
+  if (run && run.phase !== "done") {
+    const dt = Math.min(2, (now - run.last) / 1000); run.last = now;
+    if (run.phase === "starting" || run.phase === "resuming") {
+      run.wait -= dt;
+      if (run.wait <= 0) { const first = run.phase === "starting"; run.phase = "running"; applySegment(first); }
+    } else if (run.phase === "running") {
+      run.t += dt; run.segT += dt;
+      run.dist += (st.data.speed || 0) * dt / 3600;
+      const segs = run.program.segments;
+      const rem = segs[run.segIdx].dur - run.segT;
+      const sec = Math.ceil(rem);
+      if (settings.beep && sec <= 3 && sec >= 1 && run.lastBeep !== sec && run.segIdx < segs.length) { run.lastBeep = sec; beep(880, 110); }
+      if (rem <= 0) {
+        run.segT = -rem; run.segIdx++; run.lastBeep = null;
+        if (run.segIdx >= segs.length) finish(false); else applySegment(true);
+      }
+    }
+    renderRun();
+  }
+}
+setInterval(tick, 250);
+
+/* =====================================================================
+   Renderowanie
+   ===================================================================== */
+function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+function alertMsg(m) { $("phaseMsg").textContent = m; log(m); }
+
+function renderStats() {
+  const d = st.data;
+  $("sSpeed").textContent = fmtNum(d.speed);
+  $("sIncl").textContent = d.incline == null ? "–" : fmtNum(d.incline, d.incline % 1 ? 1 : 0);
+  $("sInclX").textContent = d.incline == null ? " " : inclDesc(d.incline);
+  $("sKcal").textContent = d.kcal == null ? "–" : d.kcal;
+  $("sHr").textContent = d.hr == null ? "–" : d.hr;
+  if (!run) $("sDist").textContent = d.dist == null ? "0,00" : fmtNum(d.dist / 1000, 2);
+  renderManual();
+}
+function renderManual() {
+  const sp = st.target.speed ?? st.data.speed, inc = st.target.incline ?? st.data.incline;
+  $("mSpeed").textContent = fmtNum(sp);
+  $("mIncl").textContent = inc == null ? "–" : fmtNum(inc, inc % 1 ? 1 : 0);
+  $("mInclX").textContent = inc == null ? " " : inclDesc(inc);
+}
+
+function renderProfile(svg, p, progressSec) {
+  const total = Math.max(1, progTotal(p));
+  const maxS = Math.max(st.speedRange.max, ...p.segments.map(s => s.speed), 1);
+  const maxI = Math.max(st.inclRange.max, ...p.segments.map(s => s.incline || 0), 1);
+  let x = 0, bars = "", pts = [];
+  p.segments.forEach((s, i) => {
+    const w = s.dur / total * 1000, h = s.speed / maxS * 170;
+    const active = run && run.phase !== "done" && run.program.id === p.id && run.segIdx === i;
+    bars += `<rect x="${x + 1}" y="${195 - h}" width="${Math.max(1, w - 2)}" height="${h}" rx="3" fill="#9be15d" opacity="${active ? 1 : 0.55}"/>`;
+    const iy = 195 - (s.incline || 0) / maxI * 170;
+    pts.push(`${x},${iy}`, `${x + w},${iy}`);
+    x += w;
+  });
+  let prog = "";
+  if (progressSec != null) {
+    const px = Math.min(1000, progressSec / total * 1000);
+    prog = `<rect x="0" y="0" width="${px}" height="200" fill="#000" opacity="0.35"/><line x1="${px}" y1="0" x2="${px}" y2="200" stroke="#fff" stroke-width="3"/>`;
+  }
+  svg.innerHTML = bars + `<polyline points="${pts.join(" ")}" fill="none" stroke="#4cc3ff" stroke-width="4" stroke-linejoin="round"/>` + prog;
+}
+
+function renderProgramSelect() {
+  const sel = $("selProgram");
+  sel.innerHTML = programs.map(p => `<option value="${p.id}" ${p.id === selectedId ? "selected" : ""}>${escapeHtml(p.name)}</option>`).join("");
+  const p = progById(selectedId);
+  $("progInfo").textContent = p ? `${p.segments.length} odc. · ${fmtTime(progTotal(p))} · ~${fmtNum(progDist(p), 2)} km` : "";
+  sel.disabled = !!(run && run.phase !== "done");
+}
+
+function renderRun() {
+  const p = run && run.phase !== "done" ? run.program : progById(selectedId);
+  if (p) renderProfile($("profileTrain"), p, run && run.phase !== "done" ? elapsedPlanned() : null);
+  const active = run && run.phase !== "done";
+  $("segBox").classList.toggle("hidden", !active);
+  $("btnStart").classList.toggle("hidden", !!active);
+  $("btnPause").classList.toggle("hidden", !(active && run.phase !== "paused"));
+  $("btnResume").classList.toggle("hidden", !(active && run.phase === "paused"));
+  ["btnPrev", "btnNext", "btnPlus"].forEach(id => $(id).disabled = !active);
+  $("btnStart").disabled = !st.connected;
+  if (run) {
+    $("sTime").textContent = fmtTime(run.t);
+    $("sDist").textContent = fmtNum(run.dist, 2);
+  }
+  if (active) {
+    const segs = run.program.segments, s = segs[run.segIdx], nx = segs[run.segIdx + 1];
+    $("segName").textContent = `${run.segIdx + 1}/${segs.length} · ${s.name || "Odcinek"}`;
+    $("segRemain").textContent = fmtTime(s.dur - run.segT);
+    $("segTarget").textContent = "Cel: " + segLabel(s);
+    $("segBar").style.width = (run.segT / s.dur * 100).toFixed(1) + "%";
+    $("segNext").textContent = nx ? `${nx.name || "Odcinek"} – ${segLabel(nx)} przez ${fmtTime(nx.dur)}` : "koniec programu";
+    $("progRemain").textContent = fmtTime(progTotal(run.program) - elapsedPlanned());
+    const msg = { starting: `Start taśmy… prędkość odcinka za ${Math.max(0, Math.ceil(run.wait))} s`,
+                  resuming: `Wznawianie… ${Math.max(0, Math.ceil(run.wait))} s`,
+                  paused: `Pauza${run.pausedBy ? " (" + run.pausedBy + ")" : ""}`, running: "" }[run.phase];
+    $("phaseMsg").textContent = msg;
+  } else if (run && run.phase === "done") {
+    $("phaseMsg").textContent = "";
+  }
+  renderProgramSelect();
+}
+function elapsedPlanned() {
+  if (!run) return 0;
+  return run.program.segments.slice(0, run.segIdx).reduce((a, s) => a + s.dur, 0) + run.segT;
+}
+
+function renderDevInfo() {
+  const rows = [["Status", st.connected ? "połączona" : "niepołączona"]];
+  if (st.device) rows.push(["Nazwa", st.device.name || "–"]);
+  for (const k of ["Producent", "Model", "Firmware", "Hardware", "Nr seryjny"]) if (st.info[k]) rows.push([k, st.info[k]]);
+  if (st.connected) {
+    rows.push(["Prędkość", `${st.speedRange.min}–${st.speedRange.max} km/h, krok ${st.speedRange.inc}${st.speedRange.known ? "" : " (domyślnie)"}`]);
+    rows.push(["Nachylenie", `${st.inclRange.min}–${st.inclRange.max}, krok ${st.inclRange.inc}${st.inclRange.known ? "" : " (domyślnie)"}`]);
+    rows.push(["Sterowanie", st.cp ? `prędkość: ${st.canSpeed ? "tak" : "nie"}, nachylenie: ${st.canIncl ? "tak" : "nie"}` : "brak (tylko odczyt)"]);
+  }
+  $("devInfo").innerHTML = rows.map(([a, b]) => `<div>${a}</div><div>${escapeHtml(b)}</div>`).join("");
+}
+
+function renderAll() {
+  renderStats(); renderRun(); renderDevInfo(); renderEditor();
+}
+
+/* =====================================================================
+   Edytor programów
+   ===================================================================== */
+function renderPlist() {
+  $("plist").innerHTML = programs.map(p =>
+    `<button data-id="${p.id}" class="${p.id === editId ? "sel" : ""}">${escapeHtml(p.name)}<br><span class="hint">${fmtTime(progTotal(p))} · ${p.segments.length} odc.</span></button>`).join("");
+}
+function renderEditor() {
+  renderPlist();
+  const p = progById(editId);
+  if (!p) return;
+  if (document.activeElement !== $("edName")) $("edName").value = p.name;
+  $("segList").innerHTML = p.segments.map((s, i) => `
+    <div class="segrow" data-i="${i}">
+      <div class="idx">${i + 1}</div>
+      <input class="nm" data-f="name" value="${escapeHtml(s.name || "")}" placeholder="Odcinek ${i + 1}">
+      <input data-f="dur" value="${fmtTime(s.dur)}" inputmode="numeric" title="czas m:ss">
+      <input data-f="speed" type="number" step="0.1" min="0" value="${s.speed}" inputmode="decimal" title="km/h">
+      <input data-f="incline" type="number" step="1" value="${s.incline ?? 0}" inputmode="decimal" title="nachylenie">
+      <div class="acts">
+        <button class="sm ghost" data-a="up" title="w górę">↑</button>
+        <button class="sm ghost" data-a="down" title="w dół">↓</button>
+        <button class="sm ghost" data-a="dup" title="duplikuj">⧉</button>
+        <button class="sm ghost" data-a="del" title="usuń">✕</button>
+      </div>
+    </div>`).join("");
+  updateEditInfo();
+}
+function updateEditInfo() {
+  const p = progById(editId); if (!p) return;
+  renderProfile($("profileEdit"), p, null);
+  const warn = [];
+  const sr = st.speedRange, ir = st.inclRange;
+  if (p.segments.some(s => s.speed > sr.max || s.speed < sr.min)) warn.push(`prędkość poza zakresem ${sr.min}–${sr.max} km/h zostanie przycięta`);
+  if (p.segments.some(s => (s.incline || 0) > ir.max || (s.incline || 0) < ir.min)) warn.push(`nachylenie poza zakresem ${ir.min}–${ir.max} zostanie przycięte`);
+  $("edInfo").innerHTML = `Łącznie <b>${fmtTime(progTotal(p))}</b> · ~${fmtNum(progDist(p), 2)} km · nachylenie: poz. 0–${ir.max} (poz. ${ir.max} ${inclDesc(ir.max)})` + (warn.length ? ` · <span style="color:var(--warn)">${warn.join("; ")}</span>` : "");
+  renderPlist();
+}
+function commit() { saveProgs(); updateEditInfo(); renderProgramSelect(); if (!run || run.phase === "done") renderProfile($("profileTrain"), progById(selectedId), null); }
+
+$("segList").addEventListener("change", e => {
+  const row = e.target.closest(".segrow"); if (!row) return;
+  const p = progById(editId), s = p.segments[+row.dataset.i], f = e.target.dataset.f;
+  if (f === "name") s.name = e.target.value;
+  if (f === "dur") { const v = parseTime(e.target.value); if (v > 0) s.dur = v; e.target.value = fmtTime(s.dur); }
+  if (f === "speed") { const v = num(e.target.value); if (v >= 0) s.speed = Math.round(v * 10) / 10; e.target.value = s.speed; }
+  if (f === "incline") { const v = num(e.target.value); if (!isNaN(v)) s.incline = Math.round(v * 10) / 10; e.target.value = s.incline; }
+  commit();
+});
+$("segList").addEventListener("click", e => {
+  const b = e.target.closest("button[data-a]"); if (!b) return;
+  const p = progById(editId), i = +b.closest(".segrow").dataset.i, a = b.dataset.a, arr = p.segments;
+  if (a === "up" && i > 0) [arr[i - 1], arr[i]] = [arr[i], arr[i - 1]];
+  if (a === "down" && i < arr.length - 1) [arr[i + 1], arr[i]] = [arr[i], arr[i + 1]];
+  if (a === "dup") arr.splice(i + 1, 0, Object.assign({}, arr[i], { id: uid() }));
+  if (a === "del") arr.splice(i, 1);
+  commit(); renderEditor();
+});
+$("btnAddSeg").onclick = () => {
+  const p = progById(editId), last = p.segments[p.segments.length - 1];
+  p.segments.push(seg("", 60, last ? last.speed : 5, last ? last.incline : 0));
+  commit(); renderEditor();
+};
+$("btnGen").onclick = () => {
+  const p = progById(editId);
+  const n = Math.max(1, Math.min(50, parseInt($("gN").value) || 1));
+  const w = parseTime($("gW").value), r = parseTime($("gR").value), ws = num($("gWs").value), rs = num($("gRs").value), inc = num($("gI").value) || 0;
+  if (!(w > 0) || !(ws > 0)) return;
+  for (let i = 1; i <= n; i++) {
+    p.segments.push(seg(`Szybko ${i}`, w, ws, inc));
+    if (r > 0 && rs > 0) p.segments.push(seg(`Wolno ${i}`, r, rs, inc));
+  }
+  commit(); renderEditor();
+};
+$("edName").addEventListener("input", e => { const p = progById(editId); p.name = e.target.value || "Bez nazwy"; commit(); });
+$("plist").addEventListener("click", e => { const b = e.target.closest("button[data-id]"); if (!b) return; editId = b.dataset.id; renderEditor(); });
+$("btnNewProg").onclick = () => {
+  const p = { id: uid(), name: "Nowy program", segments: [seg("Rozgrzewka", 300, 5, 0), seg("Główna część", 1200, 7, 0), seg("Schłodzenie", 180, 4, 0)] };
+  programs.push(p); editId = p.id; commit(); renderEditor(); $("edName").focus(); $("edName").select();
+};
+$("btnDupProg").onclick = () => {
+  const src = progById(editId); if (!src) return;
+  const p = JSON.parse(JSON.stringify(src)); p.id = uid(); p.name = src.name + " (kopia)";
+  p.segments.forEach(s => s.id = uid());
+  programs.push(p); editId = p.id; commit(); renderEditor();
+};
+let delArmed = null;
+$("btnDelProg").onclick = () => {
+  if (programs.length <= 1) { $("btnDelProg").textContent = "Musi zostać 1"; setTimeout(() => $("btnDelProg").textContent = "Usuń", 1500); return; }
+  if (delArmed !== editId) { delArmed = editId; $("btnDelProg").textContent = "Na pewno?"; setTimeout(() => { delArmed = null; $("btnDelProg").textContent = "Usuń"; }, 3000); return; }
+  programs = programs.filter(p => p.id !== editId); delArmed = null; $("btnDelProg").textContent = "Usuń";
+  if (!progById(selectedId)) { selectedId = programs[0].id; store.set(K_SEL, selectedId); }
+  editId = programs[0].id; commit(); renderEditor();
+};
+
+/* ---- eksport / import ---- */
+function exportJson() { return JSON.stringify({ app: "bieznia-ftms", version: 1, programs }, null, 2); }
+$("btnExportFile").onclick = () => {
+  try {
+    const blob = new Blob([exportJson()], { type: "application/json" });
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
+    a.download = `programy-bieznia-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    $("ioMsg").textContent = "Pobrano plik.";
+  } catch (e) { $("jsonBox").value = exportJson(); $("ioMsg").textContent = "Pobieranie niedostępne – JSON jest w polu poniżej."; }
+};
+$("btnExportCopy").onclick = async () => {
+  $("jsonBox").value = exportJson();
+  try { await navigator.clipboard.writeText($("jsonBox").value); $("ioMsg").textContent = "Skopiowano do schowka."; }
+  catch (e) { $("jsonBox").select(); $("ioMsg").textContent = "Zaznaczono – skopiuj ręcznie."; }
+};
+function importJson(text) {
+  try {
+    const obj = JSON.parse(text);
+    const list = Array.isArray(obj) ? obj : obj.programs;
+    if (!Array.isArray(list)) throw new Error("brak listy programów");
+    let added = 0;
+    for (const p of list) {
+      if (!p || !Array.isArray(p.segments)) continue;
+      const segs = p.segments.map(s => seg(String(s.name || ""), Math.max(1, +s.dur || 60), Math.max(0, +s.speed || 0), +s.incline || 0)).filter(s => s.speed > 0);
+      if (!segs.length) continue;
+      programs.push({ id: uid(), name: String(p.name || "Zaimportowany"), segments: segs }); added++;
+    }
+    commit(); renderEditor();
+    $("ioMsg").textContent = `Dodano programów: ${added}.`;
+  } catch (e) { $("ioMsg").textContent = "Błąd importu: " + e.message; }
+}
+$("btnImportText").onclick = () => importJson($("jsonBox").value);
+$("fileImport").onchange = e => { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => importJson(r.result); r.readAsText(f); e.target.value = ""; };
+
+/* ---- zapis programów wewnątrz pliku HTML ---- */
+const canWriteFile = typeof window.showSaveFilePicker === "function";
+let fileHandle = null;
+
+function idb(mode, fn) {
+  return new Promise((resolve, reject) => {
+    try {
+      const req = indexedDB.open("bieznia", 1);
+      req.onupgradeneeded = () => req.result.createObjectStore("kv");
+      req.onerror = () => reject(req.error);
+      req.onsuccess = () => {
+        try {
+          const tx = req.result.transaction("kv", mode), os = tx.objectStore("kv");
+          const r = fn(os); tx.oncomplete = () => resolve(r && r.result); tx.onerror = () => reject(tx.error);
+        } catch (e) { reject(e); }
+      };
+    } catch (e) { reject(e); }
+  });
+}
+const handleLoad = () => idb("readonly", os => os.get("fileHandle")).catch(() => null);
+const handleSave = h => idb("readwrite", os => os.put(h, "fileHandle")).catch(() => {});
+
+function buildHtmlWithPrograms() {
+  const doc = new DOMParser().parseFromString(PRISTINE_HTML, "text/html");
+  const payload = { savedAt: progTs, settings, programs };
+  doc.getElementById("embedded-programs").textContent = JSON.stringify(payload).replace(/</g, "\\u003c");
+  return "<!DOCTYPE html>\n" + doc.documentElement.outerHTML;
+}
+function markFileSaved() { store.set(K_FILE_TS, progTs); renderFileState(); }
+
+async function pickFile() {
+  fileHandle = await window.showSaveFilePicker({ suggestedName: "bieznia.html", types: [{ description: "Strona HTML", accept: { "text/html": [".html"] } }] });
+  handleSave(fileHandle); // zapamiętanie wyboru – bez czekania
+}
+async function saveToFile(forcePick) {
+  try {
+    if (forcePick || !fileHandle) await pickFile();
+    if ((await fileHandle.queryPermission({ mode: "readwrite" })) !== "granted" &&
+        (await fileHandle.requestPermission({ mode: "readwrite" })) !== "granted") { $("fileState").textContent = "Brak zgody na zapis do pliku."; return; }
+    const w = await fileHandle.createWritable();
+    await w.write(buildHtmlWithPrograms()); await w.close();
+    markFileSaved();
+    $("fileState").textContent = `Zapisano do pliku ${fileHandle.name} (${new Date().toLocaleTimeString("pl-PL")}).`;
+  } catch (e) {
+    if (e && e.name === "AbortError") return;
+    $("fileState").textContent = "Nie udało się zapisać: " + (e.message || e) + ". Użyj „Pobierz kopię strony”.";
+  }
+}
+function downloadHtml() {
+  try {
+    const blob = new Blob([buildHtmlWithPrograms()], { type: "text/html" });
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "bieznia.html";
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    markFileSaved();
+    $("fileState").textContent = "Pobrano nową kopię bieznia.html z programami – możesz nią zastąpić stary plik.";
+  } catch (e) { $("fileState").textContent = "Pobieranie nie powiodło się: " + (e.message || e); }
+}
+function renderFileState() {
+  const el = $("fileState"); if (!el) return;
+  $("btnSaveFile").classList.toggle("hidden", !canWriteFile);
+  $("btnPickFile").classList.toggle("hidden", !canWriteFile || !fileHandle);
+  $("btnSaveFile").textContent = fileHandle ? `Zapisz do pliku ${fileHandle.name}` : "Zapisz do pliku…";
+  const fts = store.get(K_FILE_TS, 0);
+  if (/^Zapisano|^Pobrano|^Nie |^Brak/.test(el.textContent) && fts >= progTs) return;
+  el.textContent = !fts ? "Programy nie były jeszcze zapisywane w pliku (to nie problem – są w przeglądarce)."
+    : fts >= progTs ? "Plik ma aktualne programy."
+    : "Masz zmiany, których nie ma w pliku HTML (w przeglądarce są zapisane).";
+}
+$("btnSaveFile").onclick = () => saveToFile(false);
+$("btnPickFile").onclick = () => saveToFile(true);
+$("btnDownloadHtml").onclick = downloadHtml;
+if (canWriteFile) handleLoad().then(h => { if (h) fileHandle = h; renderFileState(); });
+
+/* =====================================================================
+   Ustawienia
+   ===================================================================== */
+function bindSettings() {
+  $("setDelay").value = settings.startDelay;
+  $("setEnd").value = settings.endAction;
+  $("setInclDeg").value = settings.inclMaxDeg;
+  $("setSpdStep").value = settings.spdStep;
+  $("setBeep").checked = settings.beep;
+  $("setVoice").checked = settings.voice;
+  const save = () => {
+    settings.startDelay = clamp(num($("setDelay").value) || 0, 0, 15);
+    settings.endAction = $("setEnd").value;
+    settings.inclMaxDeg = clamp(num($("setInclDeg").value) || 6, 1, 20);
+    settings.spdStep = clamp(num($("setSpdStep").value) || 0.5, 0.1, 2);
+    settings.beep = $("setBeep").checked;
+    settings.voice = $("setVoice").checked;
+    store.set(K_SET, settings); renderAll();
+  };
+  ["setDelay", "setEnd", "setInclDeg", "setSpdStep", "setBeep", "setVoice"].forEach(id => $(id).addEventListener("change", save));
+}
+
+/* =====================================================================
+   Przyciski
+   ===================================================================== */
+document.querySelectorAll(".tabs button").forEach(b => b.onclick = () => {
+  document.querySelectorAll(".tabs button").forEach(x => x.classList.toggle("active", x === b));
+  ["train", "programs", "settings"].forEach(t => $("tab-" + t).classList.toggle("hidden", t !== b.dataset.tab));
+  if (b.dataset.tab === "programs") renderEditor();
+  if (b.dataset.tab === "settings") renderDevInfo();
+});
+$("btnConnect").onclick = () => { ensureAudio(); st.device && !st.device.gatt.connected ? setup().catch(e => { log("✖ " + e.message); setConn("err", "Błąd połączenia"); }) : connect(); };
+$("btnDisconnect").onclick = disconnect;
+$("selProgram").onchange = e => { selectedId = e.target.value; editId = selectedId; store.set(K_SEL, selectedId); $("summary").classList.add("hidden"); run = null; renderRun(); };
+$("btnStart").onclick = startProgram;
+$("btnPause").onclick = pauseProgram;
+$("btnResume").onclick = resumeProgram;
+$("btnStop").onclick = stopAll;
+$("btnPrev").onclick = () => jumpSeg(run && run.segT > 5 ? 0 : -1);
+$("btnNext").onclick = () => jumpSeg(1);
+$("btnPlus").onclick = addMinute;
+const curSpd = () => st.target.speed ?? st.data.speed ?? st.speedRange.min;
+const curInc = () => st.target.incline ?? st.data.incline ?? 0;
+$("spdUp").onclick = () => { if (run) run.manualOverride = true; setSpeed(curSpd() + settings.spdStep); };
+$("spdDown").onclick = () => { if (run) run.manualOverride = true; setSpeed(curSpd() - settings.spdStep); };
+$("incUp").onclick = () => setIncline(curInc() + st.inclRange.inc);
+$("incDown").onclick = () => setIncline(curInc() - st.inclRange.inc);
+$("btnBeltStart").onclick = beltStart;
+$("btnBeltPause").onclick = beltPause;
+$("btnCopyLog").onclick = async () => { try { await navigator.clipboard.writeText(logLines.join("\n")); $("btnCopyLog").textContent = "Skopiowano"; } catch (e) {} };
+
+/* =====================================================================
+   Start
+   ===================================================================== */
+if (!navigator.bluetooth) { $("noBt").classList.remove("hidden"); $("btnConnect").disabled = true; }
+bindSettings();
+renderAll();
+renderFileState();
+if (loadedFromFile) log("Wczytano programy zapisane w pliku HTML (były nowsze niż w przeglądarce).");
+log("Gotowe. " + (navigator.bluetooth ? "Web Bluetooth dostępny." : "Brak Web Bluetooth w tej przeglądarce."));
+/* Tryb aplikacji (PWA): praca offline – tylko przy https lub localhost */
+if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
+  navigator.serviceWorker.register("sw.js").catch(e => log("Service worker: " + e.message));
+}
+</script>
+</body>
+</html>
