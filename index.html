@@ -140,6 +140,10 @@
   .tip{position:absolute;top:6px;left:0;pointer-events:none;z-index:3;background:rgba(11,13,17,.94);border:1px solid #3a4150;
     border-radius:10px;padding:8px 11px;font-size:13px;line-height:1.45;min-width:170px;max-width:250px;box-shadow:0 6px 20px rgba(0,0,0,.45)}
   .tip b{color:var(--text)} .tip .k{color:var(--muted)} .tip .now{color:var(--accent)} .tip .w{color:var(--warn)}
+  #updBar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom));z-index:50;
+    width:min(560px, calc(100% - 24px));display:flex;align-items:center;gap:10px;background:#1a2414;border:1px solid #3c5e27;
+    border-radius:14px;padding:10px 12px;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+  #updBar .txt{flex:1;font-size:14px}
   .legend{display:flex;gap:14px;font-size:12px;color:var(--muted);margin-top:6px}
   .legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px;background:var(--c)}
 </style>
@@ -357,6 +361,14 @@
         <button id="btnCopyLog" class="sm" style="margin-top:6px">Kopiuj log</button>
       </details>
     </div>
+    <div class="panel">
+      <h2>Aplikacja</h2>
+      <div class="row">
+        <span>Wersja: <b id="appVersion">–</b></span>
+        <button id="btnCheckUpd" class="sm">Sprawdź aktualizacje</button>
+        <span class="hint" id="updMsg"></span>
+      </div>
+    </div>
   </section>
 
   <!-- ============ POMOC ============ -->
@@ -438,6 +450,7 @@
         <li><b>Po zakończeniu programu:</b> zatrzymaj taśmę albo zostaw wolny marsz.</li>
         <li><b>Kąt przy najwyższym poziomie</b> (6°): służy tylko do przeliczania poziomów na %. Zmierzysz go telefonem: poziom 15, telefon na pasie, aplikacja Miarka → Poziomica.</li>
         <li><b>Krok ręcznej prędkości</b>, <b>sygnał 3-2-1</b> i <b>komunikat głosowy</b> przy zmianie odcinka.</li>
+        <li><b>Aktualizacje:</b> gdy pojawi się nowa wersja, na dole ekranu wyświetli się pasek z przyciskiem <kbd>Aktualizuj</kbd>. W trakcie treningu pasek czeka do jego końca. Numer wersji i przycisk <kbd>Sprawdź aktualizacje</kbd> są w Ustawieniach → Aplikacja.</li>
       </ul>
     </details>
 
@@ -458,6 +471,12 @@
     </div>
     <p class="hint">Pełna instrukcja: <a href="https://github.com/AndrzejRutkowski/weep_ea200c#readme" style="color:var(--accent2)">README w repozytorium</a>.</p>
   </section>
+</div>
+
+<div id="updBar" class="hidden" role="status">
+  <span class="txt">Dostępna jest nowa wersja aplikacji.</span>
+  <button id="btnUpdate" class="primary sm">Aktualizuj</button>
+  <button id="btnUpdLater" class="ghost sm" title="Przypomnij przy następnym otwarciu">Później</button>
 </div>
 
 <script id="embedded-programs" type="application/json">null</script>
@@ -899,6 +918,7 @@ function finish(stoppedByUser) {
     else { setSpeed(st.speedRange.min); setIncline(Math.max(0, st.inclRange.min)); }
   }
   renderRun();
+  showUpdateBar(); // aktualizacja odłożona na czas treningu
 }
 
 function jumpSeg(delta) {
@@ -1589,8 +1609,57 @@ renderHistory();
 if (loadedFromFile) log("Wczytano programy zapisane w pliku HTML (były nowsze niż w przeglądarce).");
 log("Gotowe. " + (navigator.bluetooth ? "Web Bluetooth dostępny." : "Brak Web Bluetooth w tej przeglądarce."));
 /* Tryb aplikacji (PWA): praca offline – tylko przy https lub localhost */
-if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
-  navigator.serviceWorker.register("sw.js").catch(e => log("Service worker: " + e.message));
+/* ---- aktualizacje: pasek „Dostępna nowa wersja” ---- */
+let swReg = null, updWorker = null, updDismissed = false, reloading = false, updRequested = false;
+const swOk = "serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost");
+function trainingActive() { return !!(run && run.phase !== "done"); }
+function showUpdateBar() {
+  if (!updWorker || updDismissed) return;
+  // w trakcie treningu nie przeszkadzamy – pasek pojawi się po jego zakończeniu
+  $("updBar").classList.toggle("hidden", trainingActive());
+}
+function setWaiting(w) { updWorker = w; showUpdateBar(); showVersion(); $("updMsg").textContent = "Nowa wersja czeka na instalację."; }
+function trackInstalling(w) {
+  w.addEventListener("statechange", () => { if (w.state === "installed" && navigator.serviceWorker.controller) setWaiting(w); });
+}
+async function showVersion() {
+  try {
+    const v = (await caches.keys()).filter(k => /^bieznia-v\d+$/.test(k)).map(k => +k.slice(9)).sort((a, b) => a - b);
+    $("appVersion").textContent = !v.length ? "plik lokalny" : v.length > 1 ? `v${v[0]} (czeka v${v[v.length - 1]})` : `v${v[0]}`;
+  } catch (e) { $("appVersion").textContent = "plik lokalny"; }
+}
+async function checkForUpdate(manual) {
+  if (!swReg) { if (manual) $("updMsg").textContent = "Aktualizacje działają tylko w wersji zainstalowanej z internetu."; return; }
+  try {
+    if (manual) $("updMsg").textContent = "Sprawdzam…";
+    await swReg.update();
+    if (swReg.installing) { trackInstalling(swReg.installing); if (manual) $("updMsg").textContent = "Pobieram nową wersję…"; }
+    else if (swReg.waiting) setWaiting(swReg.waiting);
+    else if (manual) $("updMsg").textContent = "Masz najnowszą wersję.";
+  } catch (e) { if (manual) $("updMsg").textContent = "Nie udało się sprawdzić (brak internetu?)."; }
+}
+$("btnCheckUpd").onclick = () => { updDismissed = false; checkForUpdate(true); };
+$("btnUpdLater").onclick = () => { updDismissed = true; $("updBar").classList.add("hidden"); };
+$("btnUpdate").onclick = () => {
+  if (trainingActive()) { $("updBar").classList.add("hidden"); return; }
+  if (!updWorker) { location.reload(); return; }
+  $("btnUpdate").disabled = true; $("btnUpdate").textContent = "Aktualizuję…";
+  updRequested = true;
+  updWorker.postMessage({ type: "SKIP_WAITING" });
+  setTimeout(() => { if (!reloading) location.reload(); }, 4000); // zapas, gdyby zdarzenie nie przyszło
+};
+showVersion();
+if (swOk) {
+  // przeładuj tylko po kliknięciu „Aktualizuj” (nie przy pierwszej instalacji)
+  navigator.serviceWorker.addEventListener("controllerchange", () => { if (!updRequested || reloading) return; reloading = true; location.reload(); });
+  navigator.serviceWorker.register("sw.js").then(reg => {
+    swReg = reg;
+    if (reg.waiting && navigator.serviceWorker.controller) setWaiting(reg.waiting);
+    if (reg.installing) trackInstalling(reg.installing);
+    reg.addEventListener("updatefound", () => trackInstalling(reg.installing));
+    setInterval(() => checkForUpdate(false), 30 * 60 * 1000);           // co 30 min, gdy aplikacja jest otwarta
+    document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") checkForUpdate(false); });
+  }).catch(e => log("Service worker: " + e.message));
 }
 </script>
 </body>

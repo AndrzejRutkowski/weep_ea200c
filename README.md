@@ -44,7 +44,19 @@ Aplikację można zainstalować, żeby miała własne okno i ikonę, jak zwykły
 - **Edge:** menu **⋯ → Aplikacje → Zainstaluj tę witrynę jako aplikację**.
 - **iPhone (Bluefy):** otwórz adres aplikacji w Bluefy. Możesz dodać zakładkę albo skrót na ekranie początkowym.
 
-Po instalacji aplikacja otwiera się też bez internetu. Nowa wersja pobiera się w tle i pojawia przy kolejnym uruchomieniu.
+Po instalacji aplikacja otwiera się też bez internetu.
+
+### Aktualizacje
+
+Aplikacja sprawdza nowe wersje przy każdym otwarciu, przy powrocie do okna i co 30 minut. Gdy jest nowa wersja, pobiera ją w tle i pokazuje na dole ekranu pasek **„Dostępna jest nowa wersja aplikacji”**:
+- **Aktualizuj** przeładowuje aplikację z nową wersją. Programy, historia i ustawienia zostają.
+- **Później** chowa pasek do następnego otwarcia aplikacji.
+
+W trakcie treningu pasek się nie pokazuje, żeby przeładowanie nie przerwało połączenia z bieżnią. Pojawi się po zakończeniu programu.
+
+Numer zainstalowanej wersji i przycisk **Sprawdź aktualizacje** są w zakładce **Ustawienia → Aplikacja**.
+
+> Dla rozwijających aplikację: przy każdej zmianie plików podbij `VERSION` w `sw.js`. Tylko wtedy zainstalowane aplikacje zobaczą nową wersję.
 
 ## Pierwsze połączenie z bieżnią
 
