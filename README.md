@@ -61,7 +61,7 @@ W zakładce **Ustawienia → Bieżnia** widać dane odczytane z bieżni: model m
 
 ### Uruchomienie programu
 
-1. W zakładce **Trening** wybierz program z listy. Wykres pokazuje prędkość (zielone słupki) i nachylenie (niebieska linia).
+1. W zakładce **Trening** wybierz program z listy. Wykres pokazuje prędkość (zielone słupki) i nachylenie (niebieska linia). Po najechaniu kursorem na odcinek (na telefonie: po dotknięciu) pojawia się podpowiedź z jego numerem, nazwą, czasem trwania i momentem w programie, prędkością, poziomem nachylenia z %, dystansem, a w trakcie treningu także z informacją, czy odcinek jest zrobiony, trwa, czy dopiero się zacznie.
 2. Stań na bieżni i kliknij **▶ Start programu**.
 3. Bieżnia odlicza 3 sekundy i rusza. Po krótkim opóźnieniu (domyślnie 4 s) aplikacja ustawia prędkość i nachylenie pierwszego odcinka.
 4. Każdy kolejny odcinek przestawia bieżnię automatycznie.

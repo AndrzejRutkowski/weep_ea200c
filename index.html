@@ -135,6 +135,11 @@
   .kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:14px}
   .kv div:nth-child(odd){color:var(--muted)}
   .summary{font-size:15px}
+  .profwrap{position:relative}
+  #profileTrain{cursor:crosshair;touch-action:pan-y}
+  .tip{position:absolute;top:6px;left:0;pointer-events:none;z-index:3;background:rgba(11,13,17,.94);border:1px solid #3a4150;
+    border-radius:10px;padding:8px 11px;font-size:13px;line-height:1.45;min-width:170px;max-width:250px;box-shadow:0 6px 20px rgba(0,0,0,.45)}
+  .tip b{color:var(--text)} .tip .k{color:var(--muted)} .tip .now{color:var(--accent)} .tip .w{color:var(--warn)}
   .legend{display:flex;gap:14px;font-size:12px;color:var(--muted);margin-top:6px}
   .legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px;background:var(--c)}
 </style>
@@ -187,7 +192,10 @@
         <select id="selProgram"></select>
         <span class="hint" id="progInfo"></span>
       </div>
-      <svg class="profile" id="profileTrain" viewBox="0 0 1000 200" preserveAspectRatio="none"></svg>
+      <div class="profwrap" id="profWrap">
+        <svg class="profile" id="profileTrain" viewBox="0 0 1000 200" preserveAspectRatio="none"></svg>
+        <div class="tip hidden" id="segTip"></div>
+      </div>
       <div class="legend"><span style="--c:#9be15d">prędkość</span><span style="--c:#4cc3ff">nachylenie</span></div>
 
       <div id="segBox" class="seg hidden" style="margin-top:12px">
@@ -372,7 +380,7 @@
     <details>
       <summary>2. Trening</summary>
       <ol>
-        <li>W zakładce <b>Trening</b> wybierz program z listy.</li>
+        <li>W zakładce <b>Trening</b> wybierz program z listy. Najedź na wykres (na telefonie: dotknij go), żeby zobaczyć parametry odcinka.</li>
         <li>Stań na bieżni i kliknij <kbd>▶ Start programu</kbd>.</li>
         <li>Bieżnia odlicza 3 s i rusza, a po chwili strona ustawia prędkość i nachylenie pierwszego odcinka. Kolejne odcinki przestawiają się same.</li>
       </ol>
@@ -1044,7 +1052,59 @@ function renderManual() {
   $("mInclX").textContent = inc == null ? " " : inclDesc(inc);
 }
 
-function renderProfile(svg, p, progressSec) {
+/* ---- podpowiedź (tooltip) z parametrami odcinka na wykresie w zakładce Trening ---- */
+let tipIdx = null, tipX = 0;
+const shownProgram = () => (run && run.phase !== "done") ? run.program : progById(selectedId);
+function segAt(clientX) {
+  const p = shownProgram(); if (!p || !p.segments.length) return null;
+  const r = $("profileTrain").getBoundingClientRect();
+  const t = clamp((clientX - r.left) / r.width, 0, 0.99999) * progTotal(p);
+  let acc = 0;
+  for (let i = 0; i < p.segments.length; i++) { acc += p.segments[i].dur; if (t < acc) return i; }
+  return p.segments.length - 1;
+}
+function updateTip() {
+  const p = shownProgram(), tip = $("segTip");
+  if (!p || tipIdx == null || !p.segments[tipIdx]) { hideTip(); return; }
+  const s = p.segments[tipIdx], n = p.segments.length;
+  const from = p.segments.slice(0, tipIdx).reduce((a, x) => a + x.dur, 0), to = from + s.dur;
+  const spdMax = st.speedRange.max, capped = s.speed > spdMax || s.speed < st.speedRange.min;
+  let status = "";
+  if (run && run.phase !== "done") {
+    const el = elapsedPlanned();
+    if (tipIdx < run.segIdx) status = `<div class="k">✓ zrobiony</div>`;
+    else if (tipIdx === run.segIdx) status = `<div class="now">▶ teraz – zostało ${fmtTime(to - el)}</div>`;
+    else status = `<div class="k">start za ${fmtTime(from - el)}</div>`;
+  }
+  tip.innerHTML = `<b>${tipIdx + 1}/${n} · ${escapeHtml(s.name || "Odcinek " + (tipIdx + 1))}</b>
+    <div><span class="k">Czas:</span> ${fmtTime(s.dur)} <span class="k">(${fmtTime(from)}–${fmtTime(to)})</span></div>
+    <div><span class="k">Prędkość:</span> ${fmtNum(s.speed)} km/h${capped ? ` <span class="w">(bieżnia: ${fmtNum(clamp(s.speed, st.speedRange.min, spdMax))})</span>` : ""}</div>
+    <div><span class="k">Nachylenie:</span> poz. ${fmtNum(s.incline || 0, (s.incline || 0) % 1 ? 1 : 0)} (${inclDesc(s.incline || 0)})</div>
+    <div><span class="k">Dystans:</span> ≈${fmtNum(s.speed * s.dur / 3600, 2)} km</div>${status}`;
+  tip.classList.remove("hidden");
+  const wr = $("profWrap").getBoundingClientRect(), w = tip.offsetWidth;
+  const x = tipX - wr.left, gap = 16;
+  // obok kursora (po prawej, a gdy brak miejsca – po lewej), żeby nie zasłaniać odcinka
+  const left = x + gap + w <= wr.width ? x + gap : x - gap - w >= 0 ? x - gap - w : clamp(x - w / 2, 0, Math.max(0, wr.width - w));
+  tip.style.left = left + "px";
+}
+function showTipAt(clientX) {
+  const i = segAt(clientX); if (i == null) return;
+  tipX = clientX;
+  if (i !== tipIdx) { tipIdx = i; const p = shownProgram(); renderProfile($("profileTrain"), p, run && run.phase !== "done" ? elapsedPlanned() : null, tipIdx); }
+  updateTip();
+}
+function hideTip() {
+  if (tipIdx == null && $("segTip").classList.contains("hidden")) return;
+  tipIdx = null; $("segTip").classList.add("hidden");
+  const p = shownProgram(); if (p) renderProfile($("profileTrain"), p, run && run.phase !== "done" ? elapsedPlanned() : null, null);
+}
+$("profileTrain").addEventListener("pointermove", e => showTipAt(e.clientX));
+$("profileTrain").addEventListener("pointerdown", e => showTipAt(e.clientX));
+$("profileTrain").addEventListener("pointerleave", e => { if (e.pointerType === "mouse") hideTip(); });
+document.addEventListener("pointerdown", e => { if (tipIdx != null && !e.target.closest("#profileTrain")) hideTip(); });
+
+function renderProfile(svg, p, progressSec, hoverIdx) {
   const total = Math.max(1, progTotal(p));
   const maxS = Math.max(st.speedRange.max, ...p.segments.map(s => s.speed), 1);
   const maxI = Math.max(st.inclRange.max, ...p.segments.map(s => s.incline || 0), 1);
@@ -1052,7 +1112,8 @@ function renderProfile(svg, p, progressSec) {
   p.segments.forEach((s, i) => {
     const w = s.dur / total * 1000, h = s.speed / maxS * 170;
     const active = run && run.phase !== "done" && run.program.id === p.id && run.segIdx === i;
-    bars += `<rect x="${x + 1}" y="${195 - h}" width="${Math.max(1, w - 2)}" height="${h}" rx="3" fill="#9be15d" opacity="${active ? 1 : 0.55}"/>`;
+    if (hoverIdx === i) bars += `<rect x="${x}" y="0" width="${w}" height="200" fill="#ffffff" opacity="0.08"/>`;
+    bars += `<rect x="${x + 1}" y="${195 - h}" width="${Math.max(1, w - 2)}" height="${h}" rx="3" fill="#9be15d" opacity="${active || hoverIdx === i ? 1 : 0.55}"/>`;
     const iy = 195 - (s.incline || 0) / maxI * 170;
     pts.push(`${x},${iy}`, `${x + w},${iy}`);
     x += w;
@@ -1075,7 +1136,8 @@ function renderProgramSelect() {
 
 function renderRun() {
   const p = run && run.phase !== "done" ? run.program : progById(selectedId);
-  if (p) renderProfile($("profileTrain"), p, run && run.phase !== "done" ? elapsedPlanned() : null);
+  if (p) renderProfile($("profileTrain"), p, run && run.phase !== "done" ? elapsedPlanned() : null, tipIdx);
+  if (tipIdx != null) updateTip();
   const active = run && run.phase !== "done";
   $("segBox").classList.toggle("hidden", !active);
   $("btnStart").classList.toggle("hidden", !!active);
@@ -1165,7 +1227,7 @@ function updateEditInfo() {
   $("edInfo").innerHTML = `Łącznie <b>${fmtTime(progTotal(p))}</b> · ~${fmtNum(progDist(p), 2)} km · nachylenie: poz. 0–${ir.max} (poz. ${ir.max} ${inclDesc(ir.max)})` + (warn.length ? ` · <span style="color:var(--warn)">${warn.join("; ")}</span>` : "");
   renderPlist();
 }
-function commit() { saveProgs(); updateEditInfo(); renderProgramSelect(); if (!run || run.phase === "done") renderProfile($("profileTrain"), progById(selectedId), null); }
+function commit() { saveProgs(); updateEditInfo(); renderProgramSelect(); if (!run || run.phase === "done") { hideTip(); renderProfile($("profileTrain"), progById(selectedId), null); } }
 
 $("segList").addEventListener("change", e => {
   const row = e.target.closest(".segrow"); if (!row) return;
@@ -1412,7 +1474,7 @@ document.querySelectorAll(".tabs button").forEach(b => b.onclick = () => {
 });
 $("btnConnect").onclick = () => { ensureAudio(); st.device && !st.device.gatt.connected ? setup().catch(e => { log("✖ " + e.message); setConn("err", "Błąd połączenia"); }) : connect(); };
 $("btnDisconnect").onclick = disconnect;
-$("selProgram").onchange = e => { selectedId = e.target.value; editId = selectedId; store.set(K_SEL, selectedId); $("summary").classList.add("hidden"); run = null; renderRun(); };
+$("selProgram").onchange = e => { selectedId = e.target.value; editId = selectedId; store.set(K_SEL, selectedId); $("summary").classList.add("hidden"); run = null; hideTip(); renderRun(); };
 $("btnStart").onclick = startProgram;
 $("btnPause").onclick = pauseProgram;
 $("btnResume").onclick = resumeProgram;
