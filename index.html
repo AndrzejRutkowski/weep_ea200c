@@ -94,7 +94,7 @@
   input[type=number]{width:90px}
   textarea{width:100%;min-height:120px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px}
   label.inline{display:flex;align-items:center;gap:8px;color:var(--muted)}
-  svg.profile{width:100%;height:120px;display:block;background:#0b0d11;border-radius:10px}
+  svg.profile{width:100%;height:140px;display:block;background:#0b0d11;border-radius:10px}
   .hint{color:var(--muted);font-size:13px}
   .warnbox{background:#2a2214;border:1px solid #5a4318;color:#ffd79a;border-radius:12px;padding:10px 12px;margin-bottom:12px;font-size:14px}
   .okbox{background:#16240f;border:1px solid #2f5220;color:#c9f3a9;border-radius:12px;padding:10px 12px;margin-bottom:12px;font-size:14px}
@@ -193,10 +193,10 @@
         <span class="hint" id="progInfo"></span>
       </div>
       <div class="profwrap" id="profWrap">
-        <svg class="profile" id="profileTrain" viewBox="0 0 1000 200" preserveAspectRatio="none"></svg>
+        <svg class="profile" id="profileTrain"></svg>
         <div class="tip hidden" id="segTip"></div>
       </div>
-      <div class="legend"><span style="--c:#9be15d">prędkość</span><span style="--c:#4cc3ff">nachylenie</span></div>
+      <div class="legend"><span style="--c:#9be15d">prędkość [km/h]</span><span style="--c:#4cc3ff">nachylenie [<b id="inclScale" style="font-weight:inherit">poz. 0–15</b>]</span></div>
 
       <div id="segBox" class="seg hidden" style="margin-top:12px">
         <div class="now">
@@ -259,7 +259,7 @@
         <div class="row" style="margin-bottom:10px">
           <input id="edName" placeholder="Nazwa programu" style="flex:1;min-width:200px">
         </div>
-        <svg class="profile" id="profileEdit" viewBox="0 0 1000 200" preserveAspectRatio="none"></svg>
+        <svg class="profile" id="profileEdit"></svg>
         <div class="hint" id="edInfo" style="margin:6px 0 8px"></div>
         <div class="segrow seghead"><div></div><div>Nazwa odcinka</div><div>Czas (m:ss)</div><div>km/h</div><div id="edInclHead">Nachyl. (poz.)</div><div></div></div>
         <div id="segList"></div>
@@ -1058,7 +1058,8 @@ const shownProgram = () => (run && run.phase !== "done") ? run.program : progByI
 function segAt(clientX) {
   const p = shownProgram(); if (!p || !p.segments.length) return null;
   const r = $("profileTrain").getBoundingClientRect();
-  const t = clamp((clientX - r.left) / r.width, 0, 0.99999) * progTotal(p);
+  const L = +($("profileTrain").dataset.l || 0);
+  const t = clamp((clientX - r.left - L) / (r.width - L), 0, 0.99999) * progTotal(p);
   let acc = 0;
   for (let i = 0; i < p.segments.length; i++) { acc += p.segments[i].dur; if (t < acc) return i; }
   return p.segments.length - 1;
@@ -1104,26 +1105,73 @@ $("profileTrain").addEventListener("pointerdown", e => showTipAt(e.clientX));
 $("profileTrain").addEventListener("pointerleave", e => { if (e.pointerType === "mouse") hideTip(); });
 document.addEventListener("pointerdown", e => { if (tipIdx != null && !e.target.closest("#profileTrain")) hideTip(); });
 
+function niceStep(range, maxTicks, steps) { return steps.find(st => range / st <= maxTicks) || steps[steps.length - 1]; }
 function renderProfile(svg, p, progressSec, hoverIdx) {
+  // Rysujemy w pikselach (bez rozciągania), żeby napisy osi się nie deformowały
+  const W = Math.round(svg.clientWidth) || 1000, H = Math.round(svg.clientHeight) || 140;
+  const top = 12, axisH = 18, bottom = H - axisH, plotH = bottom - top, L = 34; // L = lewy margines na oś prędkości
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`); svg.dataset.l = L;
   const total = Math.max(1, progTotal(p));
   const maxS = Math.max(st.speedRange.max, ...p.segments.map(s => s.speed), 1);
   const maxI = Math.max(st.inclRange.max, ...p.segments.map(s => s.incline || 0), 1);
-  let x = 0, bars = "", pts = [];
+  const X = t => L + t / total * (W - L), YS = v => bottom - v / maxS * plotH, YI = v => bottom - v / maxI * plotH;
+
+  // siatka prędkości (pod słupkami)
+  const sStep = niceStep(maxS, 3, [1, 2, 2.5, 3, 4, 5, 6, 10]);
+  let grid = "", gridLabels = `<line x1="${L + 0.5}" y1="${top - 4}" x2="${L + 0.5}" y2="${bottom}" stroke="#2c313c"/>`;
+  for (let v = sStep; v <= maxS + 1e-9; v += sStep) {
+    const y = YS(v);
+    grid += `<line x1="${L}" y1="${y}" x2="${W}" y2="${y}" stroke="#ffffff" stroke-opacity="0.09" stroke-dasharray="3 4"/>`;
+    gridLabels += `<line x1="${L - 3}" y1="${y}" x2="${L}" y2="${y}" stroke="#4a5160"/>` +
+      `<text x="${L - 6}" y="${y + 3.5}" text-anchor="end" fill="#9aa1ae" font-size="10.5" font-family="inherit">${fmtNum(v, v % 1 ? 1 : 0)}</text>`;
+  }
+
+  // słupki prędkości i linia nachylenia
+  let t = 0, bars = "", pts = [];
   p.segments.forEach((s, i) => {
-    const w = s.dur / total * 1000, h = s.speed / maxS * 170;
+    const x = X(t), w = X(t + s.dur) - x, y = YS(s.speed);
     const active = run && run.phase !== "done" && run.program.id === p.id && run.segIdx === i;
-    if (hoverIdx === i) bars += `<rect x="${x}" y="0" width="${w}" height="200" fill="#ffffff" opacity="0.08"/>`;
-    bars += `<rect x="${x + 1}" y="${195 - h}" width="${Math.max(1, w - 2)}" height="${h}" rx="3" fill="#9be15d" opacity="${active || hoverIdx === i ? 1 : 0.55}"/>`;
-    const iy = 195 - (s.incline || 0) / maxI * 170;
+    if (hoverIdx === i) bars += `<rect x="${x}" y="${top - 4}" width="${w}" height="${bottom - top + 4}" fill="#ffffff" opacity="0.08"/>`;
+    bars += `<rect x="${x + 0.75}" y="${y}" width="${Math.max(1, w - 1.5)}" height="${bottom - y}" rx="2" fill="#9be15d" opacity="${active || hoverIdx === i ? 1 : 0.55}"/>`;
+    const iy = YI(s.incline || 0);
     pts.push(`${x},${iy}`, `${x + w},${iy}`);
-    x += w;
+    t += s.dur;
   });
+
+  // oś czasu
+  const tStep = niceStep(total, Math.max(2, Math.floor((W - L) / 70)), [60, 120, 300, 600, 900, 1200, 1800, 3600, 7200]);
+  let axis = `<line x1="${L}" y1="${bottom + 0.5}" x2="${W}" y2="${bottom + 0.5}" stroke="#2c313c"/>`;
+  for (let v = 0; v <= total + 1e-9; v += tStep) {
+    const x = X(v);
+    if (v > 0 && W - x < 24) break; // nie wchodź na krawędź
+    axis += `<line x1="${x}" y1="${bottom}" x2="${x}" y2="${bottom + 4}" stroke="#4a5160"/>`;
+    axis += `<text x="${x}" y="${H - 4}" text-anchor="middle" fill="#9aa1ae" font-size="10.5" font-family="inherit">${fmtTime(v)}</text>`;
+  }
+
+  // postęp treningu
   let prog = "";
   if (progressSec != null) {
-    const px = Math.min(1000, progressSec / total * 1000);
-    prog = `<rect x="0" y="0" width="${px}" height="200" fill="#000" opacity="0.35"/><line x1="${px}" y1="0" x2="${px}" y2="200" stroke="#fff" stroke-width="3"/>`;
+    const px = Math.min(W, X(progressSec));
+    prog = `<rect x="${L}" y="${top - 4}" width="${px - L}" height="${bottom - top + 4}" fill="#000" opacity="0.35"/><line x1="${px}" y1="${top - 4}" x2="${px}" y2="${bottom}" stroke="#fff" stroke-width="2"/>`;
   }
-  svg.innerHTML = bars + `<polyline points="${pts.join(" ")}" fill="none" stroke="#4cc3ff" stroke-width="4" stroke-linejoin="round"/>` + prog;
+
+  // skala nachylenia w legendzie pod wykresem (bez drugiej osi)
+  if (svg.id === "profileTrain" && $("inclScale")) $("inclScale").textContent = `poz. 0–${fmtNum(maxI, maxI % 1 ? 1 : 0)}`;
+
+  svg.innerHTML = grid + bars +
+    `<polyline points="${pts.join(" ")}" fill="none" stroke="#4cc3ff" stroke-width="2.5" stroke-linejoin="round"/>` +
+    prog + axis + gridLabels;
+}
+
+// przerysuj wykresy przy zmianie szerokości (obrót telefonu, zmiana okna, przełączenie zakładki)
+if (window.ResizeObserver) {
+  const ro = new ResizeObserver(() => {
+    const pt = shownProgram();
+    if (pt) renderProfile($("profileTrain"), pt, run && run.phase !== "done" ? elapsedPlanned() : null, tipIdx);
+    const pe = progById(editId);
+    if (pe && $("profileEdit").clientWidth) renderProfile($("profileEdit"), pe, null);
+  });
+  ro.observe($("profileTrain")); ro.observe($("profileEdit"));
 }
 
 function renderProgramSelect() {
