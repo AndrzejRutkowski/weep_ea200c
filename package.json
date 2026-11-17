@@ -1,0 +1,15 @@
+{
+  "name": "weep-ea200c",
+  "private": true,
+  "description": "Programy treningowe i sterowanie bieżnią WEEP Easy EA200C przez Bluetooth (FTMS)",
+  "type": "module",
+  "scripts": {
+    "test": "npm run test:unit && npm run test:e2e",
+    "test:unit": "node --test "tests/unit/*.test.mjs"",
+    "test:e2e": "node --test --test-concurrency=1 "tests/e2e/*.test.mjs"",
+    "serve": "node tests/server.mjs"
+  },
+  "devDependencies": {
+    "playwright-core": "1.63.0"
+  }
+}
