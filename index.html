@@ -37,6 +37,18 @@
   button.sm{padding:5px 9px;font-size:13px;border-radius:8px}
   .tabs{display:flex;gap:6px;margin:4px 0 12px}
   .tabs button{flex:1}
+  @media (max-width:480px){ .tabs button{padding:9px 6px;font-size:14px} }
+  .help h3{font-size:16px;margin:0 0 6px}
+  .help p,.help li{color:#cfd3db}
+  .help ul,.help ol{margin:6px 0 10px;padding-left:20px}
+  .help li{margin:3px 0}
+  .help details{background:var(--panel2);border-radius:12px;padding:10px 14px;margin-bottom:8px}
+  .help details[open] summary{margin-bottom:6px}
+  .help summary{color:var(--text);font-weight:600}
+  .help kbd{background:#0b0d11;border:1px solid var(--line);border-radius:6px;padding:1px 6px;font:inherit;font-size:13px;white-space:nowrap}
+  .help table{border-collapse:collapse;width:100%;font-size:14px;margin:6px 0 10px}
+  .help td{border-top:1px solid var(--line);padding:6px 8px 6px 0;vertical-align:top}
+  .help td:first-child{white-space:nowrap;color:var(--text)}
   .tabs button.active{background:var(--text);color:var(--bg);border-color:transparent;font-weight:600}
   .panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-bottom:12px}
   .panel h2{font-size:14px;margin:0 0 10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.6px}
@@ -119,10 +131,17 @@
     na iPhonie darmowej przeglądarki <b>Bluefy</b>. Edytor programów działa mimo to.
   </div>
 
+  <div id="firstRun" class="okbox hidden" style="display:flex;gap:10px;align-items:center">
+    <span style="flex:1">Pierwszy raz tutaj? Krótka instrukcja jest w zakładce <b>Pomoc</b>.</span>
+    <button id="btnFirstHelp" class="sm">Pokaż</button>
+    <button id="btnFirstClose" class="sm ghost" title="Zamknij">✕</button>
+  </div>
+
   <div class="tabs">
     <button data-tab="train" class="active">Trening</button>
     <button data-tab="programs">Programy</button>
     <button data-tab="settings">Ustawienia</button>
+    <button data-tab="help">Pomoc</button>
   </div>
 
   <!-- ============ TRENING ============ -->
@@ -284,6 +303,94 @@
         <button id="btnCopyLog" class="sm" style="margin-top:6px">Kopiuj log</button>
       </details>
     </div>
+  </section>
+
+  <!-- ============ POMOC ============ -->
+  <section id="tab-help" class="hidden help">
+    <div class="panel">
+      <h2>Jak to działa</h2>
+      <p style="margin-top:0">Tworzysz własne programy (odcinki z czasem, prędkością i nachyleniem), a strona łączy się z bieżnią przez Bluetooth i sama przestawia ją między odcinkami. Programy zapisują się automatycznie w tej przeglądarce.</p>
+      <p><b>Przeglądarka:</b> Chrome lub Edge na komputerze, <b>Bluefy</b> na iPhonie. Safari nie obsługuje Bluetooth na stronach.</p>
+    </div>
+
+    <details open>
+      <summary>1. Połączenie z bieżnią</summary>
+      <ol>
+        <li>Włącz bieżnię i <b>zamknij aplikację FitShow</b> na telefonie. Bieżnia przyjmuje tylko jedno połączenie naraz.</li>
+        <li>Kliknij <kbd>Połącz z bieżnią</kbd> i wybierz urządzenie o nazwie zaczynającej się od <b>FS-</b>.</li>
+        <li>Zielona kropka w nagłówku oznacza, że połączenie działa.</li>
+      </ol>
+      <p><b>Tryb chodzenia i biegania:</b> przy złożonej poręczy bieżnia jedzie maks. 6 km/h. Żeby odblokować 12 km/h, rozłóż poręcz. Jeśli program ma szybsze odcinki, niż bieżnia teraz przyjmie, przed startem pojawi się ostrzeżenie.</p>
+    </details>
+
+    <details>
+      <summary>2. Trening</summary>
+      <ol>
+        <li>W zakładce <b>Trening</b> wybierz program z listy.</li>
+        <li>Stań na bieżni i kliknij <kbd>▶ Start programu</kbd>.</li>
+        <li>Bieżnia odlicza 3 s i rusza, a po chwili strona ustawia prędkość i nachylenie pierwszego odcinka. Kolejne odcinki przestawiają się same.</li>
+      </ol>
+      <table>
+        <tr><td><kbd>❚❚ Pauza</kbd> / <kbd>▶ Wznów</kbd></td><td>Zatrzymuje taśmę i licznik programu. Po wznowieniu wraca prędkość bieżącego odcinka.</td></tr>
+        <tr><td><kbd>■ Stop</kbd></td><td>Od razu zatrzymuje taśmę i kończy program.</td></tr>
+        <tr><td><kbd>◀ Poprzedni odcinek</kbd></td><td>W ciągu pierwszych 5 s przechodzi do poprzedniego odcinka, później zaczyna bieżący od nowa.</td></tr>
+        <tr><td><kbd>Następny odcinek ▶</kbd></td><td>Pomija resztę bieżącego odcinka.</td></tr>
+        <tr><td><kbd>+1 min do odcinka</kbd></td><td>Wydłuża bieżący odcinek tylko w tym treningu.</td></tr>
+      </table>
+      <p>Pauza i start z <b>pilota bieżni</b> też działają: strona wstrzymuje albo wznawia licznik.</p>
+      <p><b>Sterowanie ręczne:</b> przyciski <kbd>−</kbd>/<kbd>+</kbd> zmieniają prędkość i nachylenie. W trakcie programu zmiana obowiązuje do końca bieżącego odcinka.</p>
+    </details>
+
+    <details>
+      <summary>3. Tworzenie programów</summary>
+      <p>W zakładce <b>Programy</b>: <kbd>+ Nowy</kbd>, <kbd>Duplikuj</kbd>, <kbd>Usuń</kbd> (kliknij dwa razy, żeby potwierdzić).</p>
+      <table>
+        <tr><td>Nazwa</td><td>Opcjonalna, np. „Rozgrzewka”.</td></tr>
+        <tr><td>Czas</td><td><b>m:ss</b> (np. 1:30), <b>h:mm:ss</b> albo sama liczba minut (np. 5).</td></tr>
+        <tr><td>km/h</td><td>Prędkość co 0,1 km/h.</td></tr>
+        <tr><td>Nachylenie</td><td><b>Poziom 0–15</b>, tak jak na bieżni. Obok widać przybliżony %.</td></tr>
+      </table>
+      <p>Przy odcinku: <kbd>↑</kbd> <kbd>↓</kbd> zmieniają kolejność, <kbd>⧉</kbd> duplikuje, <kbd>✕</kbd> usuwa.</p>
+      <p><b>Generator interwałów</b> dodaje np. 6 × (1:00 szybko + 2:00 wolno) jednym kliknięciem.</p>
+      <p>Prędkość lub nachylenie poza zakresem bieżni zostaną w trakcie treningu przycięte do zakresu. Edytor pokaże wtedy ostrzeżenie.</p>
+    </details>
+
+    <details>
+      <summary>4. Zapisywanie i przenoszenie programów</summary>
+      <ul>
+        <li><b>Automatycznie:</b> każda zmiana zapisuje się w tej przeglądarce. Inna przeglądarka, inne urządzenie albo wyczyszczenie danych witryn oznacza pustą listę.</li>
+        <li><b>Kopia:</b> <kbd>Pobierz plik .json</kbd> albo <kbd>Kopiuj JSON</kbd> w zakładce Programy.</li>
+        <li><b>Przeniesienie:</b> na drugim urządzeniu wczytaj plik albo wklej JSON i kliknij <kbd>Importuj z pola</kbd>. Import dodaje programy, niczego nie usuwa.</li>
+        <li><b>Zapis w pliku HTML</b> (opcjonalnie): zapisuje programy w samym pliku strony, gdy używasz jej z dysku.</li>
+      </ul>
+    </details>
+
+    <details>
+      <summary>5. Ustawienia</summary>
+      <ul>
+        <li><b>Opóźnienie po starcie taśmy</b> (4 s): ile strona czeka po komendzie start, zanim ustawi prędkość.</li>
+        <li><b>Po zakończeniu programu:</b> zatrzymaj taśmę albo zostaw wolny marsz.</li>
+        <li><b>Kąt przy najwyższym poziomie</b> (6°): służy tylko do przeliczania poziomów na %. Zmierzysz go telefonem: poziom 15, telefon na pasie, aplikacja Miarka → Poziomica.</li>
+        <li><b>Krok ręcznej prędkości</b>, <b>sygnał 3-2-1</b> i <b>komunikat głosowy</b> przy zmianie odcinka.</li>
+      </ul>
+    </details>
+
+    <details>
+      <summary>6. Gdy coś nie działa</summary>
+      <table>
+        <tr><td>Nie widać bieżni</td><td>Zamknij FitShow. Na Macu sprawdź, czy przeglądarka ma dostęp do Bluetooth (Ustawienia systemowe → Prywatność i ochrona → Bluetooth).</td></tr>
+        <tr><td>Przycisk Połącz nieaktywny</td><td>Ta przeglądarka nie obsługuje Bluetooth. Użyj Chrome, Edge albo Bluefy.</td></tr>
+        <tr><td>Maks. 6 km/h</td><td>Bieżnia jest w trybie chodzenia. Rozłóż poręcz.</td></tr>
+        <tr><td>Rozłączenie</td><td>Program przechodzi w pauzę. Kliknij <kbd>Połącz ponownie</kbd>, potem <kbd>▶ Wznów</kbd>.</td></tr>
+        <tr><td>Prędkość się nie zmienia po starcie</td><td>Zwiększ opóźnienie po starcie taśmy do 5–6 s.</td></tr>
+        <tr><td>Inny problem</td><td>Ustawienia → Log Bluetooth → <kbd>Kopiuj log</kbd>. Widać tam każdą komendę i odpowiedź bieżni.</td></tr>
+      </table>
+    </details>
+
+    <div class="warnbox" style="margin-top:12px">
+      <b>Bezpieczeństwo:</b> zawsze przypinaj <b>klucz bezpieczeństwa</b> bieżni. Działa niezależnie od Bluetooth i przeglądarki. Przed treningiem przejrzyj program, zwłaszcza szybkie odcinki, i nie zostawiaj pracującej bieżni bez nadzoru.
+    </div>
+    <p class="hint">Pełna instrukcja: <a href="https://github.com/AndrzejRutkowski/weep_ea200c#readme" style="color:var(--accent2)">README w repozytorium</a>.</p>
   </section>
 </div>
 
@@ -1097,7 +1204,7 @@ function bindSettings() {
    ===================================================================== */
 document.querySelectorAll(".tabs button").forEach(b => b.onclick = () => {
   document.querySelectorAll(".tabs button").forEach(x => x.classList.toggle("active", x === b));
-  ["train", "programs", "settings"].forEach(t => $("tab-" + t).classList.toggle("hidden", t !== b.dataset.tab));
+  ["train", "programs", "settings", "help"].forEach(t => $("tab-" + t).classList.toggle("hidden", t !== b.dataset.tab));
   if (b.dataset.tab === "programs") renderEditor();
   if (b.dataset.tab === "settings") renderDevInfo();
 });
@@ -1126,6 +1233,13 @@ $("btnCopyLog").onclick = async () => { try { await navigator.clipboard.writeTex
    ===================================================================== */
 if (!navigator.bluetooth) { $("noBt").classList.remove("hidden"); $("btnConnect").disabled = true; }
 bindSettings();
+const K_SEEN = "bieznia.helpseen.v1";
+function openTab(name) { document.querySelector(`.tabs button[data-tab="${name}"]`).click(); }
+function hideFirstRun() { $("firstRun").classList.add("hidden"); store.set(K_SEEN, 1); }
+if (!store.get(K_SEEN, 0)) $("firstRun").classList.remove("hidden");
+$("btnFirstHelp").onclick = () => { hideFirstRun(); openTab("help"); window.scrollTo(0, 0); };
+$("btnFirstClose").onclick = hideFirstRun;
+document.querySelector('.tabs button[data-tab="help"]').addEventListener("click", hideFirstRun);
 renderAll();
 renderFileState();
 if (loadedFromFile) log("Wczytano programy zapisane w pliku HTML (były nowsze niż w przeglądarce).");

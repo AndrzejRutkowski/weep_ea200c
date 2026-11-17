@@ -1,6 +1,6 @@
 // Prosty service worker: aplikacja działa offline, a nowa wersja z serwera
 // pobiera się w tle i jest używana przy następnym otwarciu.
-const CACHE = "bieznia-v2";
+const CACHE = "bieznia-v3";
 const FILES = ["./", "index.html", "manifest.webmanifest", "icons/icon.svg",
   "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png"];
 

@@ -4,6 +4,8 @@ Aplikacja w przeglądarce do tworzenia własnych programów treningowych i stero
 
 **Aplikacja:** https://andrzejrutkowski.github.io/weep_ea200c/
 
+Skrócona instrukcja jest też w samej aplikacji, w zakładce **Pomoc**.
+
 Bieżnia ma moduł Bluetooth FitShow FS-BT-D2, który obsługuje standard **FTMS** (Fitness Machine Service). Aplikacja powinna więc działać także z innymi bieżniami zgodnymi z FTMS.
 
 ---
