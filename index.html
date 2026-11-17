@@ -104,6 +104,15 @@
   @media (min-width:800px){ .ed-layout{grid-template-columns:240px 1fr} }
   .plist{display:flex;flex-direction:column;gap:6px}
   .plist button{text-align:left}
+  .pitem{display:flex;gap:6px;align-items:stretch}
+  .pitem>button{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
+  .handle{display:flex;align-items:center;justify-content:center;width:34px;flex:0 0 34px;cursor:grab;color:var(--muted);
+    touch-action:none;user-select:none;-webkit-user-select:none;border-radius:10px;background:var(--panel2);border:1px solid var(--line);font-size:18px}
+  .handle:focus-visible{outline:2px solid var(--accent2);outline-offset:1px}
+  .pitem.dragging{position:relative;z-index:2}
+  .pitem.dragging>*{border-color:var(--accent2) !important;box-shadow:0 6px 20px rgba(0,0,0,.45)}
+  .pitem.dragging .handle{cursor:grabbing;color:var(--accent2)}
+  body.reordering{cursor:grabbing;user-select:none;-webkit-user-select:none}
   .plist button.sel{border-color:var(--accent);background:#1d2616}
   .segrow{display:grid;grid-template-columns:28px 1fr 84px 84px 84px 150px;gap:6px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}
   .segrow input{width:100%}
@@ -381,6 +390,7 @@
     <details>
       <summary>3. Tworzenie programów</summary>
       <p>W zakładce <b>Programy</b>: <kbd>+ Nowy</kbd>, <kbd>Duplikuj</kbd>, <kbd>Usuń</kbd> (kliknij dwa razy, żeby potwierdzić).</p>
+      <p><b>Kolejność programów:</b> złap uchwyt <kbd>⠿</kbd> obok nazwy i przeciągnij program w górę lub w dół. Na komputerze możesz też kliknąć uchwyt i użyć strzałek <kbd>↑</kbd> <kbd>↓</kbd>. W tej kolejności programy są też na liście w zakładce Trening.</p>
       <table>
         <tr><td>Nazwa</td><td>Opcjonalna, np. „Rozgrzewka”.</td></tr>
         <tr><td>Czas</td><td><b>m:ss</b> (np. 1:30), <b>h:mm:ss</b> albo sama liczba minut (np. 5).</td></tr>
@@ -1119,8 +1129,10 @@ function renderAll() {
    Edytor programów
    ===================================================================== */
 function renderPlist() {
+  if (dragItem) return; // nie przerysowuj w trakcie przeciągania
   $("plist").innerHTML = programs.map(p =>
-    `<button data-id="${p.id}" class="${p.id === editId ? "sel" : ""}">${escapeHtml(p.name)}<br><span class="hint">${fmtTime(progTotal(p))} · ${p.segments.length} odc.</span></button>`).join("");
+    `<div class="pitem" data-pid="${p.id}"><span class="handle" tabindex="0" role="button" aria-label="Zmień kolejność: ${escapeHtml(p.name)}" title="Przeciągnij, żeby zmienić kolejność (lub strzałki ↑↓)">⠿</span>` +
+    `<button data-id="${p.id}" class="${p.id === editId ? "sel" : ""}">${escapeHtml(p.name)}<br><span class="hint">${fmtTime(progTotal(p))} · ${p.segments.length} odc.</span></button></div>`).join("");
 }
 function renderEditor() {
   renderPlist();
@@ -1191,6 +1203,54 @@ $("btnGen").onclick = () => {
 };
 $("edName").addEventListener("input", e => { const p = progById(editId); p.name = e.target.value || "Bez nazwy"; commit(); });
 $("plist").addEventListener("click", e => { const b = e.target.closest("button[data-id]"); if (!b) return; editId = b.dataset.id; renderEditor(); });
+
+/* ---- zmiana kolejności programów: przeciąganie (mysz i dotyk) oraz strzałki ---- */
+let dragItem = null, dragPointer = null, scrollTimer = null, lastY = 0;
+function commitOrder() {
+  const ids = Array.from($("plist").querySelectorAll(".pitem")).map(el => el.dataset.pid);
+  const next = ids.map(progById).filter(Boolean);
+  if (next.length !== programs.length || next.every((p, i) => p === programs[i])) return;
+  programs = next; saveProgs(); renderProgramSelect();
+}
+function dragMove(y) {
+  lastY = y;
+  const items = Array.from($("plist").querySelectorAll(".pitem")).filter(el => el !== dragItem);
+  const after = items.find(el => { const r = el.getBoundingClientRect(); return y < r.top + r.height / 2; });
+  if (after) { if (dragItem.nextElementSibling !== after) $("plist").insertBefore(dragItem, after); }
+  else if ($("plist").lastElementChild !== dragItem) $("plist").appendChild(dragItem);
+}
+function autoScroll() {
+  const edge = 70;
+  if (lastY < edge) window.scrollBy(0, -12); else if (lastY > window.innerHeight - edge) window.scrollBy(0, 12); else return;
+  dragMove(lastY);
+}
+function endDrag() {
+  if (!dragItem) return;
+  dragItem.classList.remove("dragging"); document.body.classList.remove("reordering");
+  clearInterval(scrollTimer); scrollTimer = null;
+  dragItem = null; dragPointer = null;
+  commitOrder(); renderPlist();
+}
+$("plist").addEventListener("pointerdown", e => {
+  const h = e.target.closest(".handle"); if (!h || dragItem) return;
+  e.preventDefault();
+  dragItem = h.closest(".pitem"); dragPointer = e.pointerId; lastY = e.clientY;
+  try { h.setPointerCapture(e.pointerId); } catch (err) {}
+  dragItem.classList.add("dragging"); document.body.classList.add("reordering");
+  scrollTimer = setInterval(autoScroll, 16);
+});
+$("plist").addEventListener("pointermove", e => { if (dragItem && e.pointerId === dragPointer) { e.preventDefault(); dragMove(e.clientY); } });
+$("plist").addEventListener("pointerup", e => { if (e.pointerId === dragPointer) endDrag(); });
+$("plist").addEventListener("pointercancel", e => { if (e.pointerId === dragPointer) endDrag(); });
+$("plist").addEventListener("keydown", e => {
+  const h = e.target.closest(".handle"); if (!h || (e.key !== "ArrowUp" && e.key !== "ArrowDown")) return;
+  e.preventDefault();
+  const id = h.closest(".pitem").dataset.pid, i = programs.findIndex(p => p.id === id), j = i + (e.key === "ArrowUp" ? -1 : 1);
+  if (j < 0 || j >= programs.length) return;
+  [programs[i], programs[j]] = [programs[j], programs[i]];
+  saveProgs(); renderProgramSelect(); renderPlist();
+  const nh = $("plist").querySelector(`.pitem[data-pid="${id}"] .handle`); if (nh) nh.focus();
+});
 $("btnNewProg").onclick = () => {
   const p = { id: uid(), name: "Nowy program", segments: [seg("Rozgrzewka", 300, 5, 0), seg("Główna część", 1200, 7, 0), seg("Schłodzenie", 180, 4, 0)] };
   programs.push(p); editId = p.id; commit(); renderEditor(); $("edName").focus(); $("edName").select();

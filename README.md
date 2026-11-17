@@ -98,6 +98,7 @@ Programy edytujesz w zakładce **Programy**.
 - **+ Nowy** tworzy program z trzema odcinkami do edycji.
 - **Duplikuj** kopiuje wybrany program.
 - **Usuń** usuwa program. Kliknij dwa razy, drugi raz potwierdza („Na pewno?”).
+- **Kolejność:** złap uchwyt **⠿** obok nazwy programu i przeciągnij go w górę lub w dół (myszą albo palcem). Z klawiatury: zaznacz uchwyt (Tab) i użyj strzałek ↑ ↓. W tej samej kolejności programy są na liście w zakładce Trening.
 
 ### Odcinki
 
