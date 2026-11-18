@@ -2,8 +2,8 @@
 // Nowa wersja pobiera się w tle i czeka, aż użytkownik kliknie „Aktualizuj” na pasku w aplikacji.
 
 // --- generowane przez `npm run version` (tools/update-sw.mjs) – nie edytuj ręcznie ---
-const VERSION = "14";
-const BUILD = "317926e6219e"; // eslint-disable-line no-unused-vars -- odcisk plików, czytany przez tools/update-sw.mjs
+const VERSION = "15";
+const BUILD = "096c80a268b8"; // eslint-disable-line no-unused-vars -- odcisk plików, czytany przez tools/update-sw.mjs
 const FILES = [
   "./",
   "css/app.css",

@@ -240,10 +240,18 @@ export class Treadmill extends EventTarget {
     return this._command(command.start());
   }
   pause() {
+    this._clearTarget();
     return this._command(command.pause());
   }
   stop() {
+    this._clearTarget();
     return this._command(command.stop());
+  }
+
+  /** Po zatrzymaniu zadane wartości są nieaktualne – widoki pokażą wtedy rzeczywiste odczyty z bieżni. */
+  _clearTarget() {
+    this.target = { speed: null, incline: null };
+    this._emit("change");
   }
 
   async requestControl() {
@@ -324,6 +332,7 @@ export class Treadmill extends EventTarget {
     if (!s) return;
     this._log(`ⓘ status: ${s.name} [${toHex(dv)}]`);
     if (s.op === STATUS.CONTROL_LOST) this.hasControl = false;
+    if (s.op === STATUS.STOPPED || s.op === STATUS.STOPPED_SAFETY) this._clearTarget(); // np. pilot albo klucz
     this._emit("status", s);
   }
 

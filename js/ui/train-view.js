@@ -147,6 +147,8 @@ export function initTrainView(store, app) {
     showIf($("btnStart"), !active);
     showIf($("btnPause"), active && w.phase !== "paused");
     showIf($("btnResume"), active && w.phase === "paused");
+    // Stop jest zawsze dostępny, ale wyróżniony tylko wtedy, gdy jest co zatrzymać
+    $("btnStop").classList.toggle("danger", active || (st.treadmill.data.speed || 0) > 0);
     for (const id of ["btnPrev", "btnNext", "btnPlus"]) $(id).disabled = !active;
     $("btnStart").disabled = st.treadmill.state !== "connected";
     showIf($("runWarn"), !!st.runWarning);

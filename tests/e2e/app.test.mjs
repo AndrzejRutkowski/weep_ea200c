@@ -58,6 +58,10 @@ test("program: start, zmiany odcinków, stop na końcu, podsumowanie", async () 
     page,
     () => /1\/3/.test(document.getElementById("segName").textContent) && window.__ble.sent.some(c => c[0] === 2)
   );
+  assert.ok(
+    await page.locator("#btnStop").evaluate(b => b.classList.contains("danger")),
+    "w trakcie programu Stop jest czerwony"
+  );
   await until(page, () => !document.getElementById("summary").classList.contains("hidden"));
   const cmds = hex(await sent(page));
   assert.equal(cmds[1], "07", "start taśmy");
@@ -68,6 +72,14 @@ test("program: start, zmiany odcinków, stop na końcu, podsumowanie", async () 
   assert.ok(cmds.includes("02 90 01"), "prędkość 4,0 km/h (odcinek C)");
   assert.equal(cmds[cmds.length - 1], "08 01", "stop na końcu");
   assert.match(await page.innerText("#summary"), /Program zakończony – Test/);
+  await until(page, () => !document.getElementById("btnStop").classList.contains("danger"));
+  assert.ok(await page.locator("#btnStart").evaluate(b => b.classList.contains("primary")), "wyróżniony tylko Start");
+  assert.equal(
+    await page.innerText("#mSpeed"),
+    "0,0",
+    "sterowanie ręczne pokazuje rzeczywistą prędkość po zatrzymaniu"
+  );
+  assert.equal(await page.innerText("#mIncl"), "0", "i rzeczywiste nachylenie");
   assert.deepEqual(errors, []);
   await ctx.close();
 });

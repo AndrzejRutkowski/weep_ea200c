@@ -31,6 +31,7 @@ export const MOCK_BLE = String.raw`(() => {
     if (b[0] === 2) ble.speed = (b[1] | b[2] << 8) / 100;
     if (b[0] === 3) ble.incline = ((b[1] | b[2] << 8) << 16 >> 16) / 10;
     if (b[0] === 8) ble.speed = 0;
+    if (b[0] === 8 && b[1] === 1) ble.incline = 0; // jak prawdziwa bieżnia: stop zeruje nachylenie
     setTimeout(() => cp.emit([0x80, b[0], 1]), 10);
   };
   ble.emitStatus = b => status.emit(b);
