@@ -11,6 +11,7 @@ import { clamp, parseNum } from "../util/format.js";
  * @property {number} spdStep     krok ręcznej zmiany prędkości (km/h)
  * @property {boolean} beep       sygnał 3-2-1 przed zmianą odcinka
  * @property {boolean} voice      komunikat głosowy przy zmianie odcinka
+ * @property {"day"|"week"|"month"} historyGroup  grupowanie wykresu w zakładce Historia
  */
 
 /** @type {Readonly<Settings>} */
@@ -20,7 +21,8 @@ export const DEFAULT_SETTINGS = Object.freeze({
   inclMaxDeg: 6,
   spdStep: 0.5,
   beep: true,
-  voice: false
+  voice: false,
+  historyGroup: "week"
 });
 
 /**
@@ -37,6 +39,7 @@ export function normalizeSettings(raw) {
     inclMaxDeg: clamp(n(s.inclMaxDeg, DEFAULT_SETTINGS.inclMaxDeg) || DEFAULT_SETTINGS.inclMaxDeg, 1, 20),
     spdStep: clamp(n(s.spdStep, DEFAULT_SETTINGS.spdStep) || DEFAULT_SETTINGS.spdStep, 0.1, 2),
     beep: !!s.beep,
-    voice: !!s.voice
+    voice: !!s.voice,
+    historyGroup: ["day", "week", "month"].includes(s.historyGroup) ? s.historyGroup : "week"
   };
 }

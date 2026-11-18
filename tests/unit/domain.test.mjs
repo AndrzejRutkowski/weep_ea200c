@@ -29,7 +29,9 @@ import {
   summarize,
   upsertEntry,
   weekStart,
-  weeklyDistance,
+  periodTotals,
+  shiftPeriod,
+  PERIOD_COUNT,
   historyToJson
 } from "../../js/domain/history.js";
 import { Repository, KEYS, SCHEMA_VERSION } from "../../js/storage/repository.js";
@@ -150,21 +152,62 @@ test("historia: zapis, minimum 1 minuta, podsumowanie", () => {
   assert.deepEqual(summarize(list), { count: 2, time: 1200, dist: 4, kcal: 20, elev: 0 });
 });
 
-test("historia: tygodnie od poniedziałku i wykres 8 tygodni", () => {
+test("historia: sumy w dniach, tygodniach i miesiącach", () => {
   const wed = new Date(2026, 10, 18, 12).getTime(); // środa 18.11.2026
-  assert.equal(new Date(weekStart(wed)).getDate(), 16);
-  const list = [entry("a", wed, 600, 2), entry("b", wed - 7 * 864e5, 600, 3), entry("c", wed - 70 * 864e5, 600, 9)];
-  const weeks = weeklyDistance(list, wed, 8);
+  assert.equal(new Date(weekStart(wed)).getDate(), 16, "tydzień od poniedziałku");
+  const at = (m, d, h = 12) => new Date(2026, m, d, h).getTime();
+  const list = [
+    entry("a", at(10, 18, 7), 600, 2), // dziś rano
+    entry("b", at(10, 18, 19), 600, 1), // dziś wieczorem
+    entry("c", at(10, 17), 600, 3), // wczoraj
+    entry("d", at(10, 10), 600, 4), // poprzedni tydzień
+    entry("e", at(9, 5), 600, 5), // październik
+    entry("f", at(0, 2), 600, 6) // styczeń – poza 8 tygodniami, ale w 12 miesiącach
+  ];
+
+  const days = periodTotals(list, wed, "day");
+  assert.equal(days.length, PERIOD_COUNT.day);
+  assert.deepEqual(
+    days.slice(-2).map(p => [new Date(p.start).getDate(), p.dist, p.count]),
+    [
+      [17, 3, 1],
+      [18, 3, 2]
+    ]
+  );
+
+  const weeks = periodTotals(list, wed, "week");
   assert.equal(weeks.length, 8);
   assert.deepEqual(
-    weeks.slice(-2).map(w => w.dist),
-    [3, 2]
+    weeks.slice(-2).map(p => p.dist),
+    [4, 6]
   );
   assert.equal(
-    weeks.reduce((a, w) => a + w.dist, 0),
-    5,
-    "trening sprzed 10 tygodni poza wykresem"
+    weeks.reduce((a, p) => a + p.dist, 0),
+    15,
+    "styczeń poza 8 tygodniami"
   );
+
+  const months = periodTotals(list, wed, "month");
+  assert.equal(months.length, 12);
+  assert.deepEqual(
+    months.map(p => new Date(p.start).getMonth()),
+    [11, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+  );
+  assert.deepEqual(
+    months.slice(-2).map(p => p.dist),
+    [5, 10]
+  );
+  assert.equal(months[1].dist, 6, "styczeń 2026");
+  assert.equal(new Date(months[0].start).getFullYear(), 2025, "przełom roku");
+});
+
+test("historia: przesuwanie okresów przez zmianę czasu i koniec miesiąca", () => {
+  const sun = new Date(2026, 2, 29, 12).getTime(); // 29.03.2026 – zmiana na czas letni w Polsce
+  const prev = new Date(shiftPeriod(sun, "day", -1));
+  assert.deepEqual([prev.getDate(), prev.getHours()], [28, 0]);
+  const mar31 = new Date(2026, 2, 31, 12).getTime();
+  assert.equal(new Date(shiftPeriod(mar31, "month", -1)).getMonth(), 1, "z 31 marca do lutego, bez przeskoku");
+  assert.equal(new Date(shiftPeriod(mar31, "week", -1)).getDate(), 23, "poniedziałek tydzień wcześniej");
 });
 
 test("historia: import dodaje tylko brakujące wpisy", () => {

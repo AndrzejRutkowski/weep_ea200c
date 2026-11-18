@@ -1,10 +1,31 @@
-// Zakładka „Historia”: podsumowania, wykres 8 tygodni, lista treningów, kopia JSON.
+// Zakładka „Historia”: podsumowania, wykres dystansu (dni / tygodnie / miesiące), lista treningów, kopia JSON.
 
 import { $, downloadText, readFileText, setHtml, setText, today } from "./dom.js";
 import { escapeHtml, fmtDuration, fmtNum, fmtTime, plural } from "../util/format.js";
-import { monthStart, summarize, weekStart, weeklyDistance } from "../domain/history.js";
+import { PERIOD_COUNT, monthStart, periodTotals, summarize, weekStart } from "../domain/history.js";
 
 const BADGE = { ukończony: "ok", zatrzymany: "stop", przerwany: "int" };
+
+/** Opisy okresów: tytuł wykresu, krótka etykieta pod słupkiem i pełna nazwa w podpowiedzi. */
+const PERIODS = {
+  day: {
+    title: n => `Dystans – ostatnie ${n} dni`,
+    label: d => String(d.getDate()),
+    full: d => d.toLocaleDateString("pl-PL", { weekday: "short", day: "numeric", month: "numeric" })
+  },
+  week: {
+    title: n => `Dystans – ostatnie ${n} tygodni`,
+    label: d => d.toLocaleDateString("pl-PL", { day: "numeric", month: "numeric" }),
+    full: d => `Tydzień od ${d.toLocaleDateString("pl-PL", { day: "numeric", month: "numeric" })}`
+  },
+  month: {
+    title: n => `Dystans – ostatnie ${n} miesięcy`,
+    // rok w drugiej linii przy styczniu i na pierwszym słupku, żeby było widać przełom roku
+    label: (d, i) =>
+      `${d.toLocaleDateString("pl-PL", { month: "short" })}<br>${i === 0 || d.getMonth() === 0 ? `'${String(d.getFullYear()).slice(2)}` : "&nbsp;"}`,
+    full: d => d.toLocaleDateString("pl-PL", { month: "long", year: "numeric" })
+  }
+};
 
 /**
  * @param {import("../app/store.js").Store<import("../app/controller.js").AppState>} store
@@ -63,20 +84,7 @@ export function initHistoryView(store, app) {
         tile("Łącznie", list)
     );
 
-    const weeks = weeklyDistance(list, now, 8);
-    const maxD = Math.max(1, ...weeks.map(w => w.dist));
-    setHtml(
-      $("hWeeks"),
-      weeks
-        .map((w, i) => {
-          const label = new Date(w.start).toLocaleDateString("pl-PL", { day: "numeric", month: "numeric" });
-          return (
-            `<div class="col${i === weeks.length - 1 ? " cur" : ""}" title="Tydzień od ${label}"><div class="val">${w.dist ? fmtNum(w.dist, 1) : ""}</div>` +
-            `<div class="bar" style="height:${((w.dist / maxD) * 100).toFixed(1)}px"></div><div class="lab">${label}</div></div>`
-          );
-        })
-        .join("")
-    );
+    renderChart(list, now);
 
     setHtml(
       $("hList"),
@@ -85,6 +93,39 @@ export function initHistoryView(store, app) {
         : `<p class="hint">Brak treningów. Pojawią się tu po pierwszym programie.</p>`
     );
   }
+
+  function renderChart(list, now) {
+    const unit = store.get().settings.historyGroup;
+    const n = PERIOD_COUNT[unit];
+    const fmt = PERIODS[unit];
+    const periods = periodTotals(list, now, unit, n);
+    const maxD = Math.max(1, ...periods.map(p => p.dist));
+    setText($("hChartTitle"), fmt.title(n));
+    for (const b of $("hGroup").querySelectorAll("button")) b.classList.toggle("active", b.dataset.g === unit);
+    const chart = $("hWeeks");
+    chart.style.gridTemplateColumns = `repeat(${n}, 1fr)`;
+    chart.classList.toggle("dense", n > 8);
+    setHtml(
+      chart,
+      periods
+        .map((p, i) => {
+          const d = new Date(p.start);
+          const tip =
+            `${fmt.full(d)}: ${fmtNum(p.dist, 2)} km, ${p.count} ${plural(p.count, ["trening", "treningi", "treningów"])}` +
+            (p.count ? `, ${fmtDuration(p.time)}` : "");
+          return (
+            `<div class="col${i === periods.length - 1 ? " cur" : ""}" title="${escapeHtml(tip)}"><div class="val">${p.dist ? fmtNum(p.dist, 1) : ""}</div>` +
+            `<div class="bar" style="height:${((p.dist / maxD) * 100).toFixed(1)}px"></div><div class="lab">${fmt.label(d, i)}</div></div>`
+          );
+        })
+        .join("")
+    );
+  }
+
+  $("hGroup").addEventListener("click", e => {
+    const b = e.target.closest("button[data-g]");
+    if (b) app.updateSettings({ historyGroup: b.dataset.g });
+  });
 
   // usuwanie: pierwsze kliknięcie pyta „Usuń?”, drugie usuwa
   let armed = null;
@@ -127,7 +168,7 @@ export function initHistoryView(store, app) {
   };
 
   store.subscribe((st, prev) => {
-    if (st.history !== prev.history) render();
+    if (st.history !== prev.history || st.settings.historyGroup !== prev.settings.historyGroup) render();
   });
   render();
 }

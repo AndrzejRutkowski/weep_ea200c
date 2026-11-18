@@ -19,7 +19,6 @@
 
 /** Krótsze treningi nie trafiają do historii. */
 export const MIN_DURATION_S = 60;
-const DAY_MS = 864e5;
 
 /**
  * Wpis historii na podstawie stanu silnika treningu.
@@ -91,20 +90,53 @@ export const summarize = list =>
     { count: 0, time: 0, dist: 0, kcal: 0, elev: 0 }
   );
 
+/** @typedef {"day"|"week"|"month"} PeriodUnit */
+
+/** Domyślna liczba okresów na wykresie dla każdej jednostki. */
+export const PERIOD_COUNT = Object.freeze({ day: 14, week: 8, month: 12 });
+
+/** Początek dnia (00:00). @param {number} ts */
+export function dayStart(ts) {
+  const d = new Date(ts);
+  d.setHours(0, 0, 0, 0);
+  return d.getTime();
+}
+
 /**
- * Dystans w kolejnych tygodniach (od najstarszego do bieżącego).
+ * Początek okresu, w którym leży znacznik czasu.
+ * @param {number} ts
+ * @param {PeriodUnit} unit
+ */
+export const periodStart = (ts, unit) =>
+  unit === "day" ? dayStart(ts) : unit === "week" ? weekStart(ts) : monthStart(ts);
+
+/**
+ * Początek okresu przesuniętego o `offset` okresów od tego, w którym leży `ts` (ujemny = wcześniej).
+ * Liczone na dacie kalendarzowej, więc poprawne także przy zmianie czasu letniego.
+ * @param {number} ts
+ * @param {PeriodUnit} unit
+ * @param {number} offset
+ */
+export function shiftPeriod(ts, unit, offset) {
+  const d = new Date(periodStart(ts, unit));
+  if (unit === "month") d.setMonth(d.getMonth() + offset);
+  else d.setDate(d.getDate() + offset * (unit === "week" ? 7 : 1));
+  return d.getTime();
+}
+
+/**
+ * Sumy w kolejnych okresach (od najstarszego do bieżącego).
  * @param {HistoryEntry[]} list
  * @param {number} now
- * @param {number} [weeks=8]
- * @returns {{start: number, dist: number}[]}
+ * @param {PeriodUnit} unit
+ * @param {number} [count] liczba okresów (domyślnie PERIOD_COUNT[unit])
+ * @returns {{start: number, count: number, time: number, dist: number, kcal: number, elev: number}[]}
  */
-export function weeklyDistance(list, now, weeks = 8) {
-  const current = weekStart(now);
+export function periodTotals(list, now, unit, count = PERIOD_COUNT[unit]) {
   const out = [];
-  for (let i = weeks - 1; i >= 0; i--) {
-    // weekStart z przesunięciem o pełne dni – poprawnie także przy zmianie czasu letniego
-    const start = weekStart(current - i * 7 * DAY_MS + DAY_MS / 2);
-    out.push({ start, dist: summarize(list.filter(h => weekStart(h.start) === start)).dist });
+  for (let i = count - 1; i >= 0; i--) {
+    const start = shiftPeriod(now, unit, -i);
+    out.push({ start, ...summarize(list.filter(h => periodStart(h.start, unit) === start)) });
   }
   return out;
 }

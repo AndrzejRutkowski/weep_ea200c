@@ -240,3 +240,39 @@ test("aktualizacja: pasek nowej wersji i przeładowanie po kliknięciu", async (
   assert.deepEqual(errors, []);
   await ctx.close();
 });
+
+test("historia: grupowanie wykresu po dniach, tygodniach i miesiącach", async () => {
+  const now = Date.now();
+  const h = (id, daysAgo, dist) => ({
+    id,
+    start: now - daysAgo * 864e5,
+    end: now,
+    program: "P",
+    duration: 600,
+    dist,
+    kcal: 10,
+    elev: 0,
+    maxSpeed: 6,
+    segDone: 1,
+    segTotal: 1,
+    status: "ukończony"
+  });
+  const { page, ctx, errors } = await env.openApp({ storage: { "bieznia.history.v1": [h("a", 0, 2), h("b", 1, 3)] } });
+  await page.click(".tabs button[data-tab=history]");
+  const cols = () => page.locator("#hWeeks .col").count();
+  assert.equal(await cols(), 8, "domyślnie tygodnie");
+  assert.match(await page.textContent("#hChartTitle"), /8 tygodni/);
+  await page.click("#hGroup button[data-g=day]");
+  assert.equal(await cols(), 14);
+  assert.match(await page.textContent("#hChartTitle"), /14 dni/);
+  assert.match(await page.locator("#hWeeks .col.cur").getAttribute("title"), /2,00 km, 1 trening/);
+  await page.click("#hGroup button[data-g=month]");
+  assert.equal(await cols(), 12);
+  assert.match(await page.textContent("#hChartTitle"), /12 miesięcy/);
+  await page.reload();
+  await page.click(".tabs button[data-tab=history]");
+  assert.equal(await cols(), 12, "wybór zapamiętany");
+  assert.ok(await page.locator("#hGroup button[data-g=month]").evaluate(b => b.classList.contains("active")));
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});

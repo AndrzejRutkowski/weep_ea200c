@@ -169,7 +169,12 @@
       <div class="grid hstats" id="hStats"></div>
     </div>
     <div class="panel">
-      <h2>Dystans w ostatnich 8 tygodniach</h2>
+      <div class="row" style="justify-content:space-between;margin-bottom:10px">
+        <h2 id="hChartTitle" style="margin:0">Dystans – ostatnie 8 tygodni</h2>
+        <div class="segctl" id="hGroup" role="group" aria-label="Grupowanie">
+          <button class="sm" data-g="day">Dni</button><button class="sm" data-g="week">Tygodnie</button><button class="sm" data-g="month">Miesiące</button>
+        </div>
+      </div>
       <div class="weeks" id="hWeeks"></div>
     </div>
     <div class="panel">
@@ -290,7 +295,7 @@
       <ul>
         <li>Każdy trening z programu trwający co najmniej minutę zapisuje się w zakładce <b>Historia</b>: data, program, czas, dystans, średnia i maks. prędkość, kalorie i przewyższenie.</li>
         <li>Status: <b>ukończony</b> (program do końca), <b>zatrzymany</b> (przyciskiem Stop) albo <b>przerwany</b> (np. zamknięta strona; trening zostaje odzyskany przy następnym otwarciu).</li>
-        <li>Na górze widać podsumowanie tygodnia, miesiąca i całości oraz wykres dystansu z 8 tygodni.</li>
+        <li>Na górze widać podsumowanie tygodnia, miesiąca i całości oraz wykres dystansu. Przyciskami <kbd>Dni</kbd>, <kbd>Tygodnie</kbd> i <kbd>Miesiące</kbd> zmienisz grupowanie (ostatnie 14 dni, 8 tygodni albo 12 miesięcy). Na komputerze po najechaniu kursorem na słupek widać dystans, liczbę treningów i czas.</li>
         <li>Wpis usuniesz przyciskiem <kbd>✕</kbd> (kliknij dwa razy). Kopię zrobisz przyciskiem <kbd>Pobierz kopię historii</kbd> i wczytasz na innym urządzeniu. Import dodaje tylko brakujące treningi.</li>
         <li>Przewyższenie jest liczone z poziomu nachylenia, więc jest przybliżone, tak jak przeliczenie na %.</li>
       </ul>

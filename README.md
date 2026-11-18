@@ -170,7 +170,12 @@ Każdy trening uruchomiony z programu, który trwał co najmniej minutę, zapisu
   - **zatrzymany**: przyciskiem Stop, wtedy widać też liczbę zrobionych odcinków,
   - **przerwany**: np. zamknięta strona albo rozładowany telefon. Postęp zapisuje się co 10 sekund, a trening trafia do historii przy następnym otwarciu.
 
-Na górze zakładki jest podsumowanie bieżącego tygodnia, miesiąca i całości oraz wykres dystansu z ostatnich 8 tygodni.
+Na górze zakładki jest podsumowanie bieżącego tygodnia, miesiąca i całości oraz wykres dystansu. Przyciski **Dni**, **Tygodnie** i **Miesiące** zmieniają grupowanie:
+- **Dni**: ostatnie 14 dni,
+- **Tygodnie**: ostatnie 8 tygodni (od poniedziałku),
+- **Miesiące**: ostatnie 12 miesięcy.
+
+Wybór jest zapamiętywany. Na komputerze po najechaniu kursorem na słupek widać dystans, liczbę treningów i łączny czas w danym okresie.
 
 Wpis usuniesz przyciskiem **✕** (kliknij dwa razy). Historia jest w pamięci przeglądarki, więc warto czasem kliknąć **Pobierz kopię historii (.json)**. Wczytanie kopii na innym urządzeniu dodaje tylko brakujące treningi.
 
